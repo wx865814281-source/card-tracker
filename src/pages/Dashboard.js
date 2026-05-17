@@ -4,7 +4,7 @@ import { TrendingUp, TrendingDown, Layers, ArrowRightLeft } from 'lucide-react'
 import './pages.css'
 
 export default function Dashboard({ navigate }) {
-  const [stats, setStats] = useState({ totalIn: 0, realized: 0, holdings: 0, trades: 0 })
+  const [stats, setStats] = useState({ totalCashIn: 0, holdingCost: 0, realized: 0, holdings: 0, trades: 0 })
   const [recent, setRecent] = useState([])
   const [monthly, setMonthly] = useState([])
   const [loading, setLoading] = useState(true)
@@ -15,12 +15,26 @@ export default function Dashboard({ navigate }) {
       const { data: cards } = await supabase.from('cards').select('*')
       const { data: txns } = await supabase.from('transactions').select('*, transaction_legs(*)').order('date', { ascending: false })
 
-      const totalIn = (cards || []).reduce((s, c) => s + (c.actual_cost || 0), 0)
+      // 历史总现金投入 = 所有buy交易的cash + 所有trade中付出的cash
+      const buyTxns = (txns || []).filter(t => t.type === 'buy')
+      const tradeTxns = (txns || []).filter(t => t.type === 'trade')
+      const totalCashIn = buyTxns.reduce((s, t) => {
+        const inLegs = (t.transaction_legs || []).filter(l => l.direction === 'in')
+        return s + inLegs.reduce((a, l) => a + (l.cash_amount || 0), 0)
+      }, 0) + tradeTxns.reduce((s, t) => {
+        const outCashLegs = (t.transaction_legs || []).filter(l => l.direction === 'out' && !l.card_id)
+        return s + outCashLegs.reduce((a, l) => a + (l.cash_amount || 0), 0)
+      }, 0)
+
+      // 当前持仓成本 = 持有中的卡的actual_cost之和
+      const holdingCost = (cards || []).filter(c => c.status === 'holding').reduce((s, c) => s + (c.actual_cost || 0), 0)
+
+      // 已实现盈亏
       const realized = (sales || []).reduce((s, r) => s + (r.sale_price - (r.cards?.actual_cost || 0)), 0)
       const holdings = (cards || []).filter(c => c.status === 'holding').length
       const trades = (txns || []).filter(t => t.type === 'trade').length
 
-      setStats({ totalIn, realized, holdings, trades })
+      setStats({ totalCashIn, holdingCost, realized, holdings, trades })
 
       const recentTxns = (txns || []).slice(0, 5).map(t => {
         const saleForTxn = (sales || []).find(s => s.transaction_id === t.id)
@@ -50,7 +64,6 @@ export default function Dashboard({ navigate }) {
   }
 
   const maxAbs = Math.max(...monthly.map(([, v]) => Math.abs(v)), 1)
-
   if (loading) return <div className="loading">加载中...</div>
 
   return (
@@ -60,24 +73,28 @@ export default function Dashboard({ navigate }) {
         <p className="page-sub">总览你的球星卡交易数据</p>
       </div>
 
-      <div className="metrics-grid">
+      <div className="metrics-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
         <div className="metric-card">
-          <div className="metric-label">总投入成本</div>
-          <div className="metric-value">${stats.totalIn.toLocaleString()}</div>
+          <div className="metric-label" style={{ color: 'var(--text2)' }}>历史总 Cash 投入</div>
+          <div className="metric-value">${stats.totalCashIn.toLocaleString()}</div>
         </div>
         <div className="metric-card">
-          <div className="metric-label">已实现盈亏</div>
+          <div className="metric-label" style={{ color: 'var(--text2)' }}>当前持仓成本</div>
+          <div className={`metric-value ${stats.holdingCost < 0 ? 'pos' : ''}`}>${stats.holdingCost.toLocaleString()}</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-label" style={{ color: 'var(--text2)' }}>已实现盈亏</div>
           <div className={`metric-value ${stats.realized >= 0 ? 'pos' : 'neg'}`}>
             {stats.realized >= 0 ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
             {fmt(stats.realized)}
           </div>
         </div>
         <div className="metric-card">
-          <div className="metric-label">当前持仓</div>
+          <div className="metric-label" style={{ color: 'var(--text2)' }}>当前持仓</div>
           <div className="metric-value accent"><Layers size={18} /> {stats.holdings} 张</div>
         </div>
         <div className="metric-card">
-          <div className="metric-label">Trade 次数</div>
+          <div className="metric-label" style={{ color: 'var(--text2)' }}>Trade 次数</div>
           <div className="metric-value purple"><ArrowRightLeft size={18} /> {stats.trades} 次</div>
         </div>
       </div>
@@ -92,14 +109,7 @@ export default function Dashboard({ navigate }) {
                   {val >= 0 ? '+' : ''}{Math.round(val)}
                 </div>
                 <div className="bar-track">
-                  <div
-                    className="bar-fill"
-                    style={{
-                      height: `${Math.abs(val) / maxAbs * 100}%`,
-                      background: val >= 0 ? 'var(--green)' : 'var(--red)',
-                      alignSelf: 'flex-end'
-                    }}
-                  />
+                  <div className="bar-fill" style={{ height: `${Math.abs(val) / maxAbs * 100}%`, background: val >= 0 ? 'var(--green)' : 'var(--red)', alignSelf: 'flex-end' }} />
                 </div>
                 <div className="bar-month">{month.slice(5)}月</div>
               </div>
@@ -118,7 +128,7 @@ export default function Dashboard({ navigate }) {
         ) : (
           <table className="data-table">
             <thead>
-              <tr><th>日期</th><th>备注</th><th>类型</th><th>盈亏</th></tr>
+              <tr><th style={{ color: 'var(--text2)' }}>日期</th><th style={{ color: 'var(--text2)' }}>备注</th><th style={{ color: 'var(--text2)' }}>类型</th><th style={{ color: 'var(--text2)' }}>盈亏</th></tr>
             </thead>
             <tbody>
               {recent.map(t => (
@@ -126,9 +136,7 @@ export default function Dashboard({ navigate }) {
                   <td className="mono">{t.date}</td>
                   <td>{t.notes || '—'}</td>
                   <td><span className={`badge badge-${t.type}`}>{t.type === 'buy' ? '买入' : t.type === 'sell' ? '卖出' : 'Trade'}</span></td>
-                  <td className={t.pnl != null ? (t.pnl >= 0 ? 'pos' : 'neg') : ''}>
-                    {t.pnl != null ? fmt(t.pnl) : '—'}
-                  </td>
+                  <td className={t.pnl != null ? (t.pnl >= 0 ? 'pos' : 'neg') : ''}>{t.pnl != null ? fmt(t.pnl) : '—'}</td>
                 </tr>
               ))}
             </tbody>
