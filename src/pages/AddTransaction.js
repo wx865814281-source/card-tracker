@@ -32,7 +32,7 @@ function CardPicker({ cards, onSelect, placeholder }) {
   )
 }
 
-export default function AddTransaction({ onSaved }) {
+export default function AddTransaction({ onSaved, navigate }) {
   const [type, setType] = useState('buy')
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
   const [notes, setNotes] = useState('')
