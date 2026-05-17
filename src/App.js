@@ -7,7 +7,7 @@ import AddTransaction from './pages/AddTransaction'
 import './App.css'
 
 const NAV = [
-  { id: 'dashboard', label: '仪表盘', icon: LayoutDashboard },
+  { id: 'dashboard', label: ' Dashboardboardcon: LayoutDashboard },
   { id: 'holdings', label: '持仓卡牌', icon: Layers },
   { id: 'history', label: '交易历史', icon: History },
   { id: 'add', label: '新增交易', icon: Plus },

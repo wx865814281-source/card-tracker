@@ -227,7 +227,7 @@ export default function AddTransaction({ onSaved }) {
         {msg === 'success' && <div className="msg-success">✅ 保存成功！跳转中...</div>}
         {msg && msg !== 'success' && <div className="msg-error">⚠️ {msg}</div>}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-          <button className="btn-secondary" onClick={() => window.history.back()}>取消</button>
+          <button className="btn-secondary" onClick={() => navigate('dashboard')}>取消</button>
           <button className="btn-primary" onClick={handleSave} disabled={saving}>{saving ? '保存中...' : '✓ 保存交易'}</button>
         </div>
       </div>
