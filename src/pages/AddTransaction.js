@@ -104,7 +104,7 @@ export default function AddTransaction({ onSaved }) {
           await supabase.from('transaction_legs').insert([{ transaction_id: txn.id, direction: 'out', card_id: c.id, cash_amount: 0 }])
           await supabase.from('cards').update({ status: 'sold' }).eq('id', c.id)
         }
-        if (cashOut > 0) await supabase.from('transaction_legs').insert([{ transaction_id: txn.id, direction: 'out', card_id: null, card_name_manual: '现金', cash_amount: cashOut }])
+        if (cashOut > 0) await supabase.from('transaction_legs').insert([{ transaction_id: txn.id, direction: 'out', card_id: null, card_name_manual: 'Cash', cash_amount: cashOut }])
         const netCost = totalOutCost + cashOut - cashIn
         const totalAgreedValue = validInRows.reduce((s, r) => s + (parseFloat(r.agreedValue) || 0), 0)
         for (const row of validInRows) {
@@ -114,7 +114,7 @@ export default function AddTransaction({ onSaved }) {
           const { data: newCard } = await supabase.from('cards').insert({ name: row.name, source_type: 'trade', source_card_id: tradeOutCards[0]?.id || null, agreed_value: rowAgreed || null, actual_cost: cardCost, status: 'holding' }).select().single()
           await supabase.from('transaction_legs').insert([{ transaction_id: txn.id, direction: 'in', card_id: newCard.id, agreed_value: rowAgreed || null, cash_amount: 0 }])
         }
-        if (cashIn > 0) await supabase.from('transaction_legs').insert([{ transaction_id: txn.id, direction: 'in', card_id: null, card_name_manual: '现金', cash_amount: cashIn }])
+        if (cashIn > 0) await supabase.from('transaction_legs').insert([{ transaction_id: txn.id, direction: 'in', card_id: null, card_name_manual: 'Cash', cash_amount: cashIn }])
       }
       setMsg('success')
       setTimeout(() => onSaved(), 800)
@@ -174,10 +174,10 @@ export default function AddTransaction({ onSaved }) {
               ))}
               <CardPicker cards={availableForOut} onSelect={c => setTradeOutCards([...tradeOutCards, c])} placeholder={tradeOutCards.length === 0 ? '从卡库选择...' : '+ 再添加一张卡'} />
               <div className="form-group" style={{ marginTop: 12 }}>
-                <label style={{ fontSize: 12 }}>我额外付出的现金（$，没有填0）</label>
+                <label style={{ fontSize: 12 }}>我额外付出Cash（$，没有填0）</label>
                 <input type="number" placeholder="0" value={tradeOutCash} onChange={e => setTradeOutCash(e.target.value)} />
               </div>
-              {tradeOutCards.length > 0 && <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 8 }}>付出卡总成本：${totalOutCost.toLocaleString()}{cashOut > 0 && ` + $${cashOut.toLocaleString()} 现金`}</div>}
+              {tradeOutCards.length > 0 && <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 8 }}>付出卡总成本：${totalOutCost.toLocaleString()}{cashOut > 0 && ` + $${cashOut.toLocaleString()} Cash`}</div>}
             </div>
 
             <div className="trade-divider">⇄</div>
@@ -198,7 +198,7 @@ export default function AddTransaction({ onSaved }) {
               ))}
               <button className="add-row-btn" onClick={() => setTradeInRows([...tradeInRows, { name: '', agreedValue: '' }])}><Plus size={13} /> 添加更多卡</button>
               <div className="form-group" style={{ marginTop: 12 }}>
-                <label style={{ fontSize: 12 }}>我额外收到的现金（$，没有填0）</label>
+                <label style={{ fontSize: 12 }}>我额外收到的Cash（$，没有填0）</label>
                 <input type="number" placeholder="0" value={tradeInCash} onChange={e => setTradeInCash(e.target.value)} />
               </div>
               {tradeOutCards.length > 0 && tradeInRows.some(r => r.name) && (
