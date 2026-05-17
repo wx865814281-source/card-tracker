@@ -69,7 +69,7 @@ export default function Dashboard({ navigate }) {
   return (
     <div className="page">
       <div className="page-header">
-        <h1>仪表盘</h1>
+        <h1>Dashboard</h1>
         <p className="page-sub">总览你的球星卡交易数据</p>
       </div>
 
