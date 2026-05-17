@@ -6,32 +6,82 @@ import './pages.css'
 function ImageCropper({ src, onCrop, onCancel }) {
   const canvasRef = useRef(null)
   const imgRef = useRef(null)
+  const previewRef = useRef(null)
   const [dragging, setDragging] = useState(false)
   const [resizing, setResizing] = useState(null)
-  const [box, setBox] = useState({ x: 20, y: 20, w: 260, h: 260 })
+  const [box, setBox] = useState({ x: 50, y: 50, w: 200, h: 200 })
   const startRef = useRef(null)
+  const [imgReady, setImgReady] = useState(false)
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current
     const img = imgRef.current
-    if (!canvas || !img) return
+    if (!canvas || !img || !imgReady) return
     const ctx = canvas.getContext('2d')
-    canvas.width = canvas.offsetWidth
-    canvas.height = canvas.offsetHeight
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-    ctx.fillStyle = 'rgba(0,0,0,0.5)'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-    ctx.clearRect(box.x, box.y, box.w, box.h)
+    const W = canvas.offsetWidth
+    const H = canvas.offsetHeight
+    canvas.width = W
+    canvas.height = H
+
+    // 保持比例绘制图片
+    const scale = Math.min(W / img.naturalWidth, H / img.naturalHeight)
+    const dw = img.naturalWidth * scale
+    const dh = img.naturalHeight * scale
+    const dx = (W - dw) / 2
+    const dy = (H - dh) / 2
+
+    ctx.clearRect(0, 0, W, H)
+    ctx.drawImage(img, dx, dy, dw, dh)
+
+    // 暗色蒙层
+    ctx.fillStyle = 'rgba(0,0,0,0.55)'
+    ctx.fillRect(0, 0, W, H)
+
+    // 裁剪区域显示原图
+    ctx.save()
+    ctx.beginPath()
+    ctx.rect(box.x, box.y, box.w, box.h)
+    ctx.clip()
+    ctx.drawImage(img, dx, dy, dw, dh)
+    ctx.restore()
+
+    // 边框
     ctx.strokeStyle = '#c8f135'
     ctx.lineWidth = 2
     ctx.strokeRect(box.x, box.y, box.w, box.h)
+
+    // 四个角
     const corners = [[box.x, box.y], [box.x+box.w, box.y], [box.x, box.y+box.h], [box.x+box.w, box.y+box.h]]
     ctx.fillStyle = '#c8f135'
-    corners.forEach(([cx, cy]) => { ctx.beginPath(); ctx.arc(cx, cy, 6, 0, Math.PI * 2); ctx.fill() })
-  }, [box])
+    corners.forEach(([cx, cy]) => { ctx.beginPath(); ctx.arc(cx, cy, 7, 0, Math.PI * 2); ctx.fill() })
+
+    // 更新预览
+    const prev = previewRef.current
+    if (prev) {
+      const pctx = prev.getContext('2d')
+      prev.width = 120; prev.height = 120
+      // 计算实际图片坐标
+      const sx = (box.x - dx) / scale
+      const sy = (box.y - dy) / scale
+      const sw = box.w / scale
+      const sh = box.h / scale
+      pctx.clearRect(0, 0, 120, 120)
+      pctx.drawImage(img, sx, sy, sw, sh, 0, 0, 120, 120)
+    }
+  }, [box, imgReady])
 
   useEffect(() => { draw() }, [draw])
+
+  const getImgTransform = () => {
+    const canvas = canvasRef.current
+    const img = imgRef.current
+    if (!canvas || !img) return { scale: 1, dx: 0, dy: 0 }
+    const W = canvas.offsetWidth, H = canvas.offsetHeight
+    const scale = Math.min(W / img.naturalWidth, H / img.naturalHeight)
+    const dw = img.naturalWidth * scale
+    const dh = img.naturalHeight * scale
+    return { scale, dx: (W - dw) / 2, dy: (H - dh) / 2 }
+  }
 
   const getPos = (e, canvas) => {
     const rect = canvas.getBoundingClientRect()
@@ -45,10 +95,11 @@ function ImageCropper({ src, onCrop, onCancel }) {
       { name: 'tl', x: box.x, y: box.y }, { name: 'tr', x: box.x+box.w, y: box.y },
       { name: 'bl', x: box.x, y: box.y+box.h }, { name: 'br', x: box.x+box.w, y: box.y+box.h }
     ]
-    return corners.find(c => Math.abs(c.x - pos.x) < 12 && Math.abs(c.y - pos.y) < 12)
+    return corners.find(c => Math.abs(c.x - pos.x) < 14 && Math.abs(c.y - pos.y) < 14)
   }
 
   const onMouseDown = (e) => {
+    e.preventDefault()
     const canvas = canvasRef.current
     const pos = getPos(e, canvas)
     const corner = getCorner(pos)
@@ -59,6 +110,7 @@ function ImageCropper({ src, onCrop, onCancel }) {
   }
 
   const onMouseMove = (e) => {
+    e.preventDefault()
     const canvas = canvasRef.current
     if (!canvas) return
     const pos = getPos(e, canvas)
@@ -66,7 +118,11 @@ function ImageCropper({ src, onCrop, onCancel }) {
     if (dragging && startRef.current) {
       const dx = pos.x - startRef.current.pos.x
       const dy = pos.y - startRef.current.pos.y
-      setBox(b => ({ ...b, x: Math.max(0, Math.min(W - startRef.current.box.w, startRef.current.box.x + dx)), y: Math.max(0, Math.min(H - startRef.current.box.h, startRef.current.box.y + dy)) }))
+      setBox(b => ({
+        ...b,
+        x: Math.max(0, Math.min(W - startRef.current.box.w, startRef.current.box.x + dx)),
+        y: Math.max(0, Math.min(H - startRef.current.box.h, startRef.current.box.y + dy))
+      }))
     } else if (resizing && startRef.current) {
       const sb = startRef.current.box
       const dx = pos.x - startRef.current.pos.x
@@ -84,29 +140,41 @@ function ImageCropper({ src, onCrop, onCancel }) {
   const onMouseUp = () => { setDragging(false); setResizing(null) }
 
   const handleCrop = () => {
-    const canvas = canvasRef.current
     const img = imgRef.current
+    const canvas = canvasRef.current
     if (!canvas || !img) return
-    const scaleX = img.naturalWidth / canvas.offsetWidth
-    const scaleY = img.naturalHeight / canvas.offsetHeight
+    const { scale, dx, dy } = getImgTransform()
+    const sx = (box.x - dx) / scale
+    const sy = (box.y - dy) / scale
+    const sw = box.w / scale
+    const sh = box.h / scale
     const out = document.createElement('canvas')
     out.width = 400; out.height = 400
-    const ctx = out.getContext('2d')
-    ctx.drawImage(img, box.x * scaleX, box.y * scaleY, box.w * scaleX, box.h * scaleY, 0, 0, 400, 400)
+    out.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, 400, 400)
     out.toBlob(blob => onCrop(blob), 'image/jpeg', 0.92)
   }
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 300, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
-      <div style={{ color: '#fff', fontSize: 14, marginBottom: 12 }}>拖动方框选择裁剪区域，拖动角点调整大小</div>
-      <div style={{ position: 'relative', width: '100%', maxWidth: 500, height: 360, background: '#000', borderRadius: 10, overflow: 'hidden' }}>
-        <img ref={imgRef} src={src} alt="crop" onLoad={draw} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', opacity: 0 }} />
-        <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', cursor: dragging ? 'grabbing' : 'crosshair', touchAction: 'none' }}
-          onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp}
-          onTouchStart={onMouseDown} onTouchMove={onMouseMove} onTouchEnd={onMouseUp} />
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 300, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+      <div style={{ color: '#fff', fontSize: 13, marginBottom: 10, opacity: 0.8 }}>拖动方框选择裁剪区域，拖动角点调整大小</div>
+      <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+        <div style={{ position: 'relative', width: 460, height: 340, background: '#111', borderRadius: 10, overflow: 'hidden', flexShrink: 0 }}>
+          <img ref={imgRef} src={src} alt="crop"
+            onLoad={() => { setImgReady(true) }}
+            style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }} />
+          <canvas ref={canvasRef}
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', cursor: dragging ? 'grabbing' : 'crosshair', touchAction: 'none' }}
+            onMouseDown={onMouseDown} onMouseMove={onMouseMove} onMouseUp={onMouseUp}
+            onTouchStart={onMouseDown} onTouchMove={onMouseMove} onTouchEnd={onMouseUp} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+          <div style={{ color: '#fff', fontSize: 12, opacity: 0.7 }}>预览效果</div>
+          <canvas ref={previewRef} style={{ width: 120, height: 120, borderRadius: 8, border: '2px solid #c8f135', background: '#111' }} />
+          <div style={{ color: '#aaa', fontSize: 11 }}>卡片缩略图</div>
+        </div>
       </div>
       <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-        <button onClick={onCancel} style={{ background: 'var(--bg3)', color: 'var(--text2)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 20px', fontSize: 14, cursor: 'pointer' }}>取消</button>
+        <button onClick={onCancel} style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8, padding: '8px 20px', fontSize: 14, cursor: 'pointer' }}>取消</button>
         <button onClick={handleCrop} style={{ background: '#c8f135', color: '#000', border: 'none', borderRadius: 8, padding: '8px 20px', fontSize: 14, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
           <Check size={15} /> 确认裁剪
         </button>
