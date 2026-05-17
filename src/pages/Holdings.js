@@ -53,7 +53,9 @@ function ImageCropper({ src, onCrop, onCancel }) {
     const pos = getPos(e, canvas)
     const corner = getCorner(pos)
     if (corner) { setResizing(corner.name); startRef.current = { pos, box: { ...box } } }
-    else if (pos.x >= box.x && pos.x <= box.x+box.w && pos.y >= box.y && pos.y <= box.y+box.h) { setDragging(true); startRef.current = { pos, box: { ...box } } }
+    else if (pos.x >= box.x && pos.x <= box.x+box.w && pos.y >= box.y && pos.y <= box.y+box.h) {
+      setDragging(true); startRef.current = { pos, box: { ...box } }
+    }
   }
 
   const onMouseMove = (e) => {
@@ -131,6 +133,17 @@ function CardDetail({ card, onClose, onDeleted, onUpdated }) {
   const saleInfo = sales[0]
   const pnl = saleInfo ? saleInfo.sale_price - card.actual_cost : null
 
+  const getDuration = () => {
+    const buyLeg = txns.find(l => l.direction === 'in')
+    if (!buyLeg?.transactions?.date) return '—'
+    const start = new Date(buyLeg.transactions.date)
+    const end = card.status === 'sold' && saleInfo ? new Date(saleInfo.sale_date) : new Date()
+    const days = Math.floor((end - start) / (1000 * 60 * 60 * 24))
+    if (days < 30) return `${days} 天`
+    if (days < 365) return `${Math.floor(days / 30)} 个月 ${days % 30} 天`
+    return `${Math.floor(days / 365)} 年 ${Math.floor((days % 365) / 30)} 个月`
+  }
+
   const handleFileSelect = (e) => {
     const file = e.target.files[0]
     if (!file) return
@@ -180,18 +193,48 @@ function CardDetail({ card, onClose, onDeleted, onUpdated }) {
             </div>
             <input ref={fileRef} type="file" accept="image/*" onChange={handleFileSelect} style={{ display: 'none' }} />
           </div>
+
           <div className="modal-body">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
               <h2 style={{ fontSize: 18, fontWeight: 600, flex: 1 }}>{card.name}</h2>
-              <span className={`badge ${card.status === 'holding' ? 'badge-pending' : 'badge-sold'}`}>{card.status === 'holding' ? '持有中' : '已售出'}</span>
+              <span className={`badge ${card.status === 'holding' ? 'badge-pending' : 'badge-sold'}`}>
+                {card.status === 'holding' ? '持有中' : '已售出'}
+              </span>
             </div>
+
             <div className="detail-grid">
-              <div className="detail-item"><div className="detail-label"><DollarSign size={12} /> 实际成本</div><div className="detail-value">${card.actual_cost?.toLocaleString()}</div></div>
-              {card.agreed_value && <div className="detail-item"><div className="detail-label">认可Value</div><div className="detail-value purple">${card.agreed_value?.toLocaleString()}</div></div>}
-              {saleInfo && <div className="detail-item"><div className="detail-label"><Tag size={12} /> 卖出价格</div><div className="detail-value">${saleInfo.sale_price?.toLocaleString()}</div></div>}
-              {pnl != null && <div className="detail-item"><div className="detail-label">{pnl >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />} 盈亏</div><div className={`detail-value ${pnl >= 0 ? 'pos' : 'neg'}`}>{pnl >= 0 ? '+' : ''}${pnl.toLocaleString()}</div></div>}
-              <div className="detail-item"><div className="detail-label"><ArrowRight size={12} /> 来源</div><div className="detail-value" style={{ fontSize: 12 }}>{card.source_type === 'cash' ? '现金购入' : 'Trade 得到'}</div></div>
+              <div className="detail-item">
+                <div className="detail-label"><DollarSign size={12} /> 实际成本</div>
+                <div className="detail-value">${card.actual_cost?.toLocaleString()}</div>
+              </div>
+              {card.agreed_value && (
+                <div className="detail-item">
+                  <div className="detail-label">认可 Value</div>
+                  <div className="detail-value purple">${card.agreed_value?.toLocaleString()}</div>
+                </div>
+              )}
+              {saleInfo && (
+                <div className="detail-item">
+                  <div className="detail-label"><Tag size={12} /> 卖出价格</div>
+                  <div className="detail-value">${saleInfo.sale_price?.toLocaleString()}</div>
+                </div>
+              )}
+              {pnl != null && (
+                <div className="detail-item">
+                  <div className="detail-label">{pnl >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />} 盈亏</div>
+                  <div className={`detail-value ${pnl >= 0 ? 'pos' : 'neg'}`}>{pnl >= 0 ? '+' : ''}${pnl.toLocaleString()}</div>
+                </div>
+              )}
+              <div className="detail-item">
+                <div className="detail-label"><ArrowRight size={12} /> 来源</div>
+                <div className="detail-value" style={{ fontSize: 12 }}>{card.source_type === 'cash' ? 'Cash 购入' : 'Trade 得到'}</div>
+              </div>
+              <div className="detail-item">
+                <div className="detail-label"><Calendar size={12} /> 持有时长</div>
+                <div className="detail-value" style={{ fontSize: 14 }}>{getDuration()}</div>
+              </div>
             </div>
+
             {txns.length > 0 && (
               <div style={{ marginTop: 16 }}>
                 <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 500, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>交易记录</div>
@@ -204,7 +247,9 @@ function CardDetail({ card, onClose, onDeleted, onUpdated }) {
                 ))}
               </div>
             )}
+
             {saleInfo && <div style={{ marginTop: 12, fontSize: 12, color: 'var(--text3)' }}>售出日期：{saleInfo.sale_date}</div>}
+
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: '0.5px solid var(--border)' }}>
               {!confirmDelete ? (
                 <button onClick={() => setConfirmDelete(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', color: 'var(--red)', fontSize: 13, padding: '6px 0', border: 'none', cursor: 'pointer' }}>
@@ -213,7 +258,9 @@ function CardDetail({ card, onClose, onDeleted, onUpdated }) {
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 13, color: 'var(--text2)' }}>确认删除？此操作不可撤销</span>
-                  <button onClick={handleDelete} disabled={deleting} style={{ background: 'var(--red-bg)', color: 'var(--red)', border: '1px solid var(--red)', borderRadius: 6, padding: '5px 12px', fontSize: 12, cursor: 'pointer' }}>{deleting ? '删除中...' : '确认删除'}</button>
+                  <button onClick={handleDelete} disabled={deleting} style={{ background: 'var(--red-bg)', color: 'var(--red)', border: '1px solid var(--red)', borderRadius: 6, padding: '5px 12px', fontSize: 12, cursor: 'pointer' }}>
+                    {deleting ? '删除中...' : '确认删除'}
+                  </button>
                   <button onClick={() => setConfirmDelete(false)} style={{ background: 'none', color: 'var(--text3)', border: 'none', fontSize: 12, cursor: 'pointer' }}>取消</button>
                 </div>
               )}
@@ -246,10 +293,12 @@ export default function Holdings({ navigate }) {
   return (
     <div className="page">
       {selected && <CardDetail card={selected} onClose={() => setSelected(null)} onDeleted={() => { setSelected(null); load() }} onUpdated={() => load()} />}
+
       <div className="page-header-row">
         <div><h1>持仓卡牌</h1><p className="page-sub">管理你的所有球星卡</p></div>
         <button className="btn-primary" onClick={() => navigate('add')}>+ 新增交易</button>
       </div>
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
         <div className="filter-tabs" style={{ marginBottom: 0 }}>
           {[['holding','持有中'],['sold','已售出'],['all','全部']].map(([v,l]) => (
@@ -261,6 +310,7 @@ export default function Holdings({ navigate }) {
           <button className={`tab-btn ${view==='list'?'active':''}`} onClick={() => setView('list')}><List size={15} /></button>
         </div>
       </div>
+
       {filtered.length === 0 ? (
         <div style={{ padding: '60px 0', textAlign: 'center' }}>
           <div style={{ fontSize: 40, marginBottom: 12 }}>🃏</div>
@@ -278,9 +328,9 @@ export default function Holdings({ navigate }) {
                 <div className="card-name">{card.name}</div>
                 <div className="card-costs">
                   <div className="cost-item"><DollarSign size={12} /><span className="cost-label">实际成本</span><span className="cost-val">${card.actual_cost?.toLocaleString()}</span></div>
-                  {card.agreed_value && <div className="cost-item purple"><span className="cost-label">认可Value</span><span className="cost-val">${card.agreed_value?.toLocaleString()}</span></div>}
+                  {card.agreed_value && <div className="cost-item purple"><span className="cost-label">认可 Value</span><span className="cost-val">${card.agreed_value?.toLocaleString()}</span></div>}
                 </div>
-                <div className="card-source"><ArrowRight size={11} />{card.source_type === 'cash' ? '现金购入' : card.source_card?.name ? `来自 ${card.source_card.name}` : '来自 Trade'}</div>
+                <div className="card-source"><ArrowRight size={11} />{card.source_type === 'cash' ? 'Cash 购入' : card.source_card?.name ? `来自 ${card.source_card.name}` : '来自 Trade'}</div>
               </div>
             </div>
           ))}
@@ -288,7 +338,7 @@ export default function Holdings({ navigate }) {
       ) : (
         <div className="table-wrap">
           <table className="data-table">
-            <thead><tr><th>卡牌</th><th>实际成本</th><th>认可Value</th><th>来源</th><th>状态</th></tr></thead>
+            <thead><tr><th>卡牌</th><th>实际成本</th><th>认可 Value</th><th>来源</th><th>状态</th></tr></thead>
             <tbody>
               {filtered.map(card => (
                 <tr key={card.id} onClick={() => setSelected(card)} style={{ cursor: 'pointer' }}>
@@ -302,7 +352,7 @@ export default function Holdings({ navigate }) {
                   </td>
                   <td>${card.actual_cost?.toLocaleString()}</td>
                   <td>{card.agreed_value ? <span className="value-tag">${card.agreed_value?.toLocaleString()}</span> : <span style={{ color: 'var(--text3)' }}>—</span>}</td>
-                  <td style={{ fontSize: 12, color: 'var(--text2)' }}>{card.source_type === 'cash' ? '现金购入' : card.source_card?.name ? `来自 ${card.source_card.name}` : '来自 Trade'}</td>
+                  <td style={{ fontSize: 12, color: 'var(--text2)' }}>{card.source_type === 'cash' ? 'Cash 购入' : card.source_card?.name ? `来自 ${card.source_card.name}` : '来自 Trade'}</td>
                   <td><span className={`badge ${card.status === 'holding' ? 'badge-pending' : 'badge-sold'}`}>{card.status === 'holding' ? '持有中' : '已售出'}</span></td>
                 </tr>
               ))}
