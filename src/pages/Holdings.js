@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { Handshake, DollarSign, ArrowRight } from 'lucide-react'
+import { Users, DollarSign, ArrowRight } from 'lucide-react'
 import './pages.css'
 
 export default function Holdings({ navigate }) {
@@ -66,7 +66,7 @@ export default function Holdings({ navigate }) {
                   </div>
                   {card.agreed_value && (
                     <div className="cost-item purple">
-                      <Handshake size={12} />
+                      <Users size={12} />
                       <span className="cost-label">认可价值</span>
                       <span className="cost-val">${card.agreed_value?.toLocaleString()}</span>
                     </div>

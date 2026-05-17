@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
-import { Search, X, Plus, Handshake } from 'lucide-react'
+import { Search, X, Plus, Users } from 'lucide-react'
 import './pages.css'
 
 export default function AddTransaction({ onSaved }) {
@@ -252,7 +252,7 @@ export default function AddTransaction({ onSaved }) {
                   </div>
                   <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                     <div style={{ flex: 1 }}>
-                      <label style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 4 }}><Handshake size={11} /> 双方认可价值（$）</label>
+                      <label style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 4 }}><Users size={11} /> 双方认可价值（$）</label>
                       <input type="number" placeholder="0" value={row.agreedValue} onChange={e => { const r=[...tradeInRows]; r[i].agreedValue=e.target.value; setTradeInRows(r) }} />
                     </div>
                     <div style={{ flex: 1 }}>

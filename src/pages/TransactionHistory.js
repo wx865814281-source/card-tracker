@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { GitBranch, ChevronDown, ChevronUp, Handshake, CornerUpLeft } from 'lucide-react'
+import { GitBranch, ChevronDown, ChevronUp, Users, CornerUpLeft } from 'lucide-react'
 import './pages.css'
 
 export default function TransactionHistory() {
@@ -79,7 +79,7 @@ export default function TransactionHistory() {
                         <div className="history-card-name">
                           {leg.cards?.name || leg.card_name_manual}
                           {leg.cards?.agreed_value && (
-                            <span className="value-tag"><Handshake size={10} /> value ${leg.cards.agreed_value.toLocaleString()}</span>
+                            <span className="value-tag"><Users size={10} /> value ${leg.cards.agreed_value.toLocaleString()}</span>
                           )}
                         </div>
                         {leg.cards?.source_type === 'trade' && (
@@ -127,7 +127,7 @@ export default function TransactionHistory() {
                         <div style={{ fontSize: 13 }}>${outLegs[0].cards.actual_cost.toLocaleString()}</div>
                         {outLegs[0].cards?.agreed_value && (
                           <div className="value-tag" style={{ marginTop: 3 }}>
-                            <Handshake size={10} /> value ${outLegs[0].cards.agreed_value.toLocaleString()}
+                            <Users size={10} /> value ${outLegs[0].cards.agreed_value.toLocaleString()}
                           </div>
                         )}
                       </div>
@@ -149,7 +149,7 @@ export default function TransactionHistory() {
                         {inLegs.map(l => (
                           <div key={l.id} style={{ fontSize: 12, color: 'var(--text2)' }}>
                             + {l.cards?.name || l.card_name_manual}
-                            {l.agreed_value && <span className="value-tag" style={{ marginLeft: 4 }}><Handshake size={10} /> ${l.agreed_value.toLocaleString()}</span>}
+                            {l.agreed_value && <span className="value-tag" style={{ marginLeft: 4 }}><Users size={10} /> ${l.agreed_value.toLocaleString()}</span>}
                           </div>
                         ))}
                       </div>
