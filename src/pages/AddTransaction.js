@@ -159,7 +159,7 @@ export default function AddTransaction({ onSaved }) {
           <div className="form-group"><label>选择卖出的卡</label>
             {sellCard ? <div className="selected-pill">{sellCard.name} <button onClick={() => setSellCard(null)}><X size={13} /></button></div> : <CardPicker cards={holdingCards} onSelect={setSellCard} placeholder="搜索持仓卡牌..." />}
           </div>
-          {sellCard && (<div className="form-group"><label>卖出价格（$）</label><input type="number" placeholder="0.00" value={salePrice} onChange={e => setSalePrice(e.target.value)} /><div className="form-hint">成本 ${sellCard.actual_cost?.toLocaleString()}{sellCard.agreed_value ? `，认可价值 $${sellCard.agreed_value?.toLocaleString()}` : ''}</div></div>)}
+          {sellCard && (<div className="form-group"><label>卖出价格（$）</label><input type="number" placeholder="0.00" value={salePrice} onChange={e => setSalePrice(e.target.value)} /><div className="form-hint">成本 ${sellCard.actual_cost?.toLocaleString()}{sellCard.agreed_value ? `，认可Value $${sellCard.agreed_value?.toLocaleString()}` : ''}</div></div>)}
         </>)}
 
         {type === 'trade' && (
@@ -177,8 +177,15 @@ export default function AddTransaction({ onSaved }) {
                 <label style={{ fontSize: 12 }}>我额外付出Cash（$，没有填0）</label>
                 <input type="number" placeholder="0" value={tradeOutCash} onChange={e => setTradeOutCash(e.target.value)} />
               </div>
-              {tradeOutCards.length > 0 && <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 8 }}>付出卡总成本：${totalOutCost.toLocaleString()}{cashOut > 0 && ` + $${cashOut.toLocaleString()} Cash`}</div>}
-            </div>
+{tradeOutCards.length > 0 && (
+  <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 8, lineHeight: 1.8 }}>
+    <div>付出卡总成本：${totalOutCost.toLocaleString()}{cashOut > 0 && ` + Cash $${cashOut.toLocaleString()}`}</div>
+    <div>预计付出总 Value：
+      {cashOut > 0 && `Cash $${cashOut.toLocaleString()} + `}
+      Value ${tradeOutCards.reduce((s, c) => s + (c.agreed_value || 0), 0).toLocaleString()}
+    </div>
+  </div>
+)}            </div>
 
             <div className="trade-divider">⇄</div>
 
@@ -191,7 +198,7 @@ export default function AddTransaction({ onSaved }) {
                     {tradeInRows.length > 1 && <button className="icon-btn" onClick={() => setTradeInRows(tradeInRows.filter((_,j) => j!==i))}><X size={13} /></button>}
                   </div>
                   <div style={{ marginTop: 6 }}>
-                    <label style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 4 }}><Users size={11} /> 双方认可价值（$）</label>
+                    <label style={{ fontSize: 11, color: 'var(--text3)', display: 'flex', alignItems: 'center', gap: 4 }}><Users size={11} /> 双方认可Value（$）</label>
                     <input type="number" placeholder="0" value={row.agreedValue} onChange={e => { const r=[...tradeInRows]; r[i].agreedValue=e.target.value; setTradeInRows(r) }} />
                   </div>
                 </div>

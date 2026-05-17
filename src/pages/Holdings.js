@@ -187,7 +187,7 @@ function CardDetail({ card, onClose, onDeleted, onUpdated }) {
             </div>
             <div className="detail-grid">
               <div className="detail-item"><div className="detail-label"><DollarSign size={12} /> 实际成本</div><div className="detail-value">${card.actual_cost?.toLocaleString()}</div></div>
-              {card.agreed_value && <div className="detail-item"><div className="detail-label">认可价值</div><div className="detail-value purple">${card.agreed_value?.toLocaleString()}</div></div>}
+              {card.agreed_value && <div className="detail-item"><div className="detail-label">认可Value</div><div className="detail-value purple">${card.agreed_value?.toLocaleString()}</div></div>}
               {saleInfo && <div className="detail-item"><div className="detail-label"><Tag size={12} /> 卖出价格</div><div className="detail-value">${saleInfo.sale_price?.toLocaleString()}</div></div>}
               {pnl != null && <div className="detail-item"><div className="detail-label">{pnl >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />} 盈亏</div><div className={`detail-value ${pnl >= 0 ? 'pos' : 'neg'}`}>{pnl >= 0 ? '+' : ''}${pnl.toLocaleString()}</div></div>}
               <div className="detail-item"><div className="detail-label"><ArrowRight size={12} /> 来源</div><div className="detail-value" style={{ fontSize: 12 }}>{card.source_type === 'cash' ? '现金购入' : 'Trade 得到'}</div></div>
@@ -278,7 +278,7 @@ export default function Holdings({ navigate }) {
                 <div className="card-name">{card.name}</div>
                 <div className="card-costs">
                   <div className="cost-item"><DollarSign size={12} /><span className="cost-label">实际成本</span><span className="cost-val">${card.actual_cost?.toLocaleString()}</span></div>
-                  {card.agreed_value && <div className="cost-item purple"><span className="cost-label">认可价值</span><span className="cost-val">${card.agreed_value?.toLocaleString()}</span></div>}
+                  {card.agreed_value && <div className="cost-item purple"><span className="cost-label">认可Value</span><span className="cost-val">${card.agreed_value?.toLocaleString()}</span></div>}
                 </div>
                 <div className="card-source"><ArrowRight size={11} />{card.source_type === 'cash' ? '现金购入' : card.source_card?.name ? `来自 ${card.source_card.name}` : '来自 Trade'}</div>
               </div>
@@ -288,7 +288,7 @@ export default function Holdings({ navigate }) {
       ) : (
         <div className="table-wrap">
           <table className="data-table">
-            <thead><tr><th>卡牌</th><th>实际成本</th><th>认可价值</th><th>来源</th><th>状态</th></tr></thead>
+            <thead><tr><th>卡牌</th><th>实际成本</th><th>认可Value</th><th>来源</th><th>状态</th></tr></thead>
             <tbody>
               {filtered.map(card => (
                 <tr key={card.id} onClick={() => setSelected(card)} style={{ cursor: 'pointer' }}>

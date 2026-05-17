@@ -187,7 +187,7 @@ export default function TransactionHistory() {
                       {inCardLegs.map(l => (
                         <div key={l.id} className="chain-step">
                           <ArrowDownLeft size={14} style={{ color: 'var(--green)', flexShrink: 0 }} />
-                          <div>得到卡：<b>{l.cards?.name || l.card_name_manual}</b>{l.agreed_value ? `｜认可价值 $${l.agreed_value.toLocaleString()}｜实际成本 $${l.cards?.actual_cost?.toLocaleString()}` : ''}</div>
+                          <div>得到卡：<b>{l.cards?.name || l.card_name_manual}</b>{l.agreed_value ? `｜认可Value $${l.agreed_value.toLocaleString()}｜实际成本 $${l.cards?.actual_cost?.toLocaleString()}` : ''}</div>
                         </div>
                       ))}
                       {totalInCash > 0 && (
