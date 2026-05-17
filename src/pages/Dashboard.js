@@ -16,10 +16,10 @@ function getPeriodRange(period) {
   const now = new Date()
   const y = now.getFullYear()
   const m = now.getMonth()
-  if (period === 'this_month') return [new Date(y, m, 1), new Date(y, m+1, 0)]
-  if (period === 'last_month') return [new Date(y, m-1, 1), new Date(y, m, 0)]
-  if (period === 'this_year') return [new Date(y, 0, 1), new Date(y, 11, 31)]
-  if (period === 'last_year') return [new Date(y-1, 0, 1), new Date(y-1, 11, 31)]
+  if (period === 'this_month') return [new Date(y, m, 1), new Date(y, m+1, 0, 23, 59, 59)]
+  if (period === 'last_month') return [new Date(y, m-1, 1), new Date(y, m, 0, 23, 59, 59)]
+  if (period === 'this_year') return [new Date(y, 0, 1), new Date(y, 11, 31, 23, 59, 59)]
+  if (period === 'last_year') return [new Date(y-1, 0, 1), new Date(y-1, 11, 31, 23, 59, 59)]
   return [null, null]
 }
 
@@ -30,7 +30,7 @@ function fmt(n) {
 
 function inRange(dateStr, start, end) {
   if (!start && !end) return true
-  const d = new Date(dateStr)
+  const d = new Date(dateStr + 'T12:00:00')
   if (start && d < start) return false
   if (end && d > end) return false
   return true
