@@ -1,0 +1,166 @@
+.page { max-width: 960px; }
+
+.loading { padding: 60px; text-align: center; color: var(--text3); }
+
+.page-header { margin-bottom: 24px; }
+.page-header h1 { font-size: 24px; font-weight: 600; }
+.page-header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+.page-header-row h1 { font-size: 24px; font-weight: 600; }
+.page-sub { color: var(--text3); font-size: 13px; margin-top: 2px; }
+
+/* Metrics */
+.metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+.metric-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 16px 18px; }
+.metric-label { font-size: 12px; color: var(--text3); margin-bottom: 6px; }
+.metric-value { font-size: 22px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.metric-value.pos { color: var(--green); }
+.metric-value.neg { color: var(--red); }
+.metric-value.accent { color: var(--accent); }
+.metric-value.purple { color: var(--purple); }
+
+/* Section card */
+.section-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 18px 20px; margin-bottom: 16px; }
+.section-title { font-size: 13px; font-weight: 500; color: var(--text2); margin-bottom: 14px; letter-spacing: 0.03em; text-transform: uppercase; font-size: 11px; }
+.section-title-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.link-btn { background: none; color: var(--accent); font-size: 13px; padding: 0; text-decoration: none; }
+.link-btn:hover { opacity: 0.8; }
+
+/* Bar chart */
+.bar-chart { display: flex; gap: 12px; align-items: flex-end; height: 120px; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; }
+.bar-label-val { font-size: 11px; font-weight: 500; white-space: nowrap; }
+.bar-track { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+.bar-fill { width: 100%; border-radius: 4px 4px 0 0; min-height: 3px; transition: height 0.3s; }
+.bar-month { font-size: 11px; color: var(--text3); }
+
+/* Table */
+.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.data-table th { text-align: left; padding: 8px 10px; color: var(--text3); font-weight: 500; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+.data-table td { padding: 10px 10px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: var(--bg3); }
+
+/* Badges */
+.badge { display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: 11px; font-weight: 500; }
+.badge-buy { background: var(--bg4); color: var(--text2); border: 1px solid var(--border2); }
+.badge-sell, .badge-sold { background: var(--red-bg); color: var(--red); }
+.badge-trade { background: var(--purple-bg); color: var(--purple); }
+.badge-settled { background: var(--bg4); color: var(--text3); font-size: 11px; }
+.badge-pending { background: var(--green-bg); color: var(--green); font-size: 11px; }
+
+.pos { color: var(--green); }
+.neg { color: var(--red); }
+.mono { font-family: 'DM Mono', monospace; font-size: 12px; }
+
+/* Filter tabs */
+.filter-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+.tab-btn { background: var(--bg3); border: 1px solid var(--border); color: var(--text2); padding: 6px 14px; font-size: 13px; border-radius: 8px; }
+.tab-btn:hover { color: var(--text); border-color: var(--border2); }
+.tab-btn.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+/* Card grid */
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+.card-item { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; transition: border-color 0.15s; }
+.card-item:hover { border-color: var(--border2); }
+.card-item.sold { opacity: 0.5; }
+.card-photo { position: relative; height: 130px; background: var(--bg3); display: flex; align-items: center; justify-content: center; }
+.card-photo img { width: 100%; height: 100%; object-fit: cover; }
+.card-placeholder { font-size: 36px; }
+.card-status-dot { position: absolute; top: 8px; right: 8px; width: 8px; height: 8px; border-radius: 50%; }
+.card-status-dot.holding { background: var(--green); }
+.card-status-dot.sold { background: var(--red); }
+.card-body { padding: 12px; }
+.card-name { font-size: 13px; font-weight: 500; margin-bottom: 8px; line-height: 1.4; }
+.card-costs { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
+.cost-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text2); }
+.cost-item.purple { color: var(--purple); }
+.cost-label { flex: 1; }
+.cost-val { font-weight: 500; }
+.card-source { font-size: 11px; color: var(--text3); display: flex; align-items: center; gap: 4px; }
+.sold-label { font-size: 11px; color: var(--red); margin-top: 6px; }
+
+/* History */
+.history-list { display: flex; flex-direction: column; gap: 2px; }
+.history-row { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.history-main { display: grid; grid-template-columns: 72px 1fr 90px 90px 140px 70px 36px; align-items: start; padding: 12px 14px; gap: 10px; }
+.history-date { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text3); padding-top: 2px; }
+.history-center { min-width: 0; }
+.history-card-name { font-weight: 500; font-size: 13px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.history-sub { font-size: 11px; color: var(--text3); display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+.history-notes { font-size: 11px; color: var(--text3); margin-top: 4px; }
+.history-type { padding-top: 2px; }
+.history-cost { font-size: 13px; padding-top: 2px; }
+.history-income { font-size: 13px; padding-top: 2px; }
+.history-pnl { font-size: 13px; font-weight: 600; padding-top: 2px; }
+
+.value-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; color: var(--purple); background: var(--purple-bg); border-radius: 4px; padding: 1px 6px; white-space: nowrap; }
+
+.trade-summary { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
+.trade-out, .trade-in { display: flex; flex-direction: column; gap: 3px; }
+.trade-card-chip { font-size: 12px; }
+.trade-card-chip.out { color: var(--text2); }
+.trade-card-chip.in { color: var(--text); }
+.trade-arrow { color: var(--text3); font-size: 14px; padding-top: 1px; }
+.inline-value { color: var(--purple); font-size: 11px; }
+
+.chain-btn { background: transparent; color: var(--text3); display: flex; align-items: center; gap: 3px; padding: 2px 4px; font-size: 12px; }
+.chain-btn:hover { color: var(--accent); }
+.chain-body { padding: 12px 16px 14px; border-top: 1px solid var(--border); background: var(--bg); }
+.chain-step { font-size: 13px; color: var(--text2); padding: 4px 0; line-height: 1.5; }
+.chain-step b { color: var(--text); }
+
+.summary-bar { display: flex; justify-content: flex-end; align-items: center; gap: 16px; padding: 12px 16px; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); margin-top: 8px; }
+
+/* Form */
+.form-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; display: flex; flex-direction: column; gap: 16px; max-width: 680px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 12px; color: var(--text2); font-weight: 500; }
+.form-hint { font-size: 11px; color: var(--text3); margin-top: 4px; }
+
+.type-tabs { display: flex; gap: 6px; }
+.type-tab { flex: 1; padding: 8px; background: var(--bg3); border: 1px solid var(--border); color: var(--text2); border-radius: 8px; font-size: 13px; }
+.type-tab.active { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+
+.photo-upload { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; border: 1px dashed var(--border2); border-radius: 10px; height: 120px; cursor: pointer; color: var(--text2); font-size: 13px; overflow: hidden; }
+.photo-upload:hover { border-color: var(--accent); }
+
+.picker-wrap { position: relative; }
+.picker-search { display: flex; align-items: center; gap: 8px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px; padding: 8px 12px; }
+.picker-search input { background: transparent; border: none; padding: 0; border-radius: 0; }
+.picker-search input:focus { border: none; }
+.picker-list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px; overflow: hidden; z-index: 50; max-height: 180px; overflow-y: auto; }
+.picker-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; cursor: pointer; font-size: 13px; }
+.picker-item:hover { background: var(--bg4); }
+.picker-cost { font-size: 11px; color: var(--text3); }
+.picker-empty { padding: 12px 14px; color: var(--text3); font-size: 13px; }
+
+.selected-pill { display: inline-flex; align-items: center; gap: 8px; background: var(--purple-bg); color: var(--purple); border-radius: 8px; padding: 8px 12px; font-size: 13px; }
+.selected-pill button { background: none; color: var(--purple); padding: 0; }
+
+.trade-wrap { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: start; }
+.trade-side { display: flex; flex-direction: column; gap: 8px; }
+.trade-side-label { font-size: 12px; font-weight: 500; color: var(--text2); }
+.trade-divider { display: flex; align-items: flex-start; justify-content: center; padding-top: 28px; color: var(--text3); font-size: 18px; }
+.trade-in-row { background: var(--bg3); border: 1px solid var(--border); border-radius: 8px; padding: 10px; margin-bottom: 4px; }
+.add-row-btn { background: none; color: var(--accent); font-size: 12px; display: flex; align-items: center; gap: 4px; padding: 4px 0; }
+.cost-preview { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-top: 8px; }
+.icon-btn { background: var(--bg4); border: 1px solid var(--border); color: var(--text2); padding: 4px 6px; border-radius: 6px; flex-shrink: 0; }
+.empty-state { color: var(--text2); font-size: 14px; }
+
+.btn-primary { background: var(--accent); color: #000; font-weight: 600; padding: 10px 22px; border-radius: 8px; font-size: 14px; }
+.btn-primary:hover { background: var(--accent2); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-secondary { background: var(--bg3); color: var(--text2); border: 1px solid var(--border); padding: 10px 20px; border-radius: 8px; font-size: 14px; }
+
+.msg-success { background: var(--green-bg); color: var(--green); padding: 10px 14px; border-radius: 8px; font-size: 13px; }
+.msg-error { background: var(--red-bg); color: var(--red); padding: 10px 14px; border-radius: 8px; font-size: 13px; }
+
+@media (max-width: 768px) {
+  .metrics-grid { grid-template-columns: 1fr 1fr; }
+  .history-main { grid-template-columns: 60px 1fr 80px 36px; }
+  .history-cost, .history-income { display: none; }
+  .form-row { grid-template-columns: 1fr; }
+  .trade-wrap { grid-template-columns: 1fr; }
+  .trade-divider { padding-top: 0; }
+}
