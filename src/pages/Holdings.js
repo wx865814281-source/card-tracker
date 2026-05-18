@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
-import { DollarSign, ArrowRight, LayoutGrid, List, X, Calendar, Tag, TrendingUp, TrendingDown, Camera, Trash2, Check } from 'lucide-react'
+import { DollarSign, ArrowRight, LayoutGrid, List, X, Search, Calendar, Tag, TrendingUp, TrendingDown, Camera, Trash2, Check } from 'lucide-react'
 import './pages.css'
 
 function ImageCropper({ src, onCrop, onCancel }) {
@@ -355,7 +355,12 @@ export default function Holdings({ navigate }) {
 
   useEffect(() => { load() }, [])
 
-  const filtered = cards.filter(c => filter === 'all' ? true : c.status === filter)
+  const [search, setSearch] = useState('')
+  const filtered = cards.filter(c => {
+    const matchFilter = filter === 'all' ? true : c.status === filter
+    const matchSearch = search === '' ? true : c.name.toLowerCase().includes(search.toLowerCase())
+    return matchFilter && matchSearch
+  })
   if (loading) return <div className="loading">加载中...</div>
 
   return (
@@ -377,6 +382,12 @@ export default function Holdings({ navigate }) {
           <button className={`tab-btn ${view==='grid'?'active':''}`} onClick={() => setView('grid')}><LayoutGrid size={15} /></button>
           <button className={`tab-btn ${view==='list'?'active':''}`} onClick={() => setView('list')}><List size={15} /></button>
         </div>
+      </div>
+
+      <div style={{ position: 'relative', marginBottom: 16 }}>
+        <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', pointerEvents: 'none' }} />
+        <input placeholder="搜索卡牌名称..." value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: 36, width: '100%' }} />
+        {search && <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', padding: 4 }}><X size={14} /></button>}
       </div>
 
       {filtered.length === 0 ? (
