@@ -9,7 +9,7 @@ function ImageCropper({ src, onCrop, onCancel }) {
   const previewRef = useRef(null)
   const [dragging, setDragging] = useState(false)
   const [resizing, setResizing] = useState(null)
-  const [box, setBox] = useState({ x: 50, y: 50, w: 200, h: 200 })
+  const [box, setBox] = useState({ x: 80, y: 80, w: 200, h: 200 })
   const startRef = useRef(null)
   const [imgReady, setImgReady] = useState(false)
 
@@ -128,10 +128,11 @@ function ImageCropper({ src, onCrop, onCancel }) {
       const dx = pos.x - startRef.current.pos.x
       const dy = pos.y - startRef.current.pos.y
       let { x, y, w, h } = sb
-      if (resizing === 'br') { w = Math.max(40, sb.w + dx); h = Math.max(40, sb.h + dy) }
-      else if (resizing === 'tr') { w = Math.max(40, sb.w + dx); h = Math.max(40, sb.h - dy); y = sb.y + (sb.h - h) }
-      else if (resizing === 'bl') { w = Math.max(40, sb.w - dx); h = Math.max(40, sb.h + dy); x = sb.x + (sb.w - w) }
-      else if (resizing === 'tl') { w = Math.max(40, sb.w - dx); h = Math.max(40, sb.h - dy); x = sb.x + (sb.w - w); y = sb.y + (sb.h - h) }
+      // 锁定正方形：取dx和dy中较大的那个
+      if (resizing === 'br') { const s = Math.max(40, Math.max(sb.w + dx, sb.h + dy)); w = s; h = s }
+      else if (resizing === 'tr') { const s = Math.max(40, Math.max(sb.w + dx, sb.h - dy)); w = s; h = s; y = sb.y + (sb.h - h) }
+      else if (resizing === 'bl') { const s = Math.max(40, Math.max(sb.w - dx, sb.h + dy)); w = s; h = s; x = sb.x + (sb.w - w) }
+      else if (resizing === 'tl') { const s = Math.max(40, Math.max(sb.w - dx, sb.h - dy)); w = s; h = s; x = sb.x + (sb.w - w); y = sb.y + (sb.h - h) }
       x = Math.max(0, Math.min(W - w, x)); y = Math.max(0, Math.min(H - h, y))
       setBox({ x, y, w: Math.min(w, W - x), h: Math.min(h, H - y) })
     }
