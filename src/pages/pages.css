@@ -162,6 +162,7 @@
   .history-header { display: none; }
   .history-cost, .history-income { display: none; }
   .history-pnl { white-space: nowrap; }
+  .history-pnl { white-space: nowrap; }
   .form-row { grid-template-columns: 1fr; }
   .trade-wrap { grid-template-columns: 1fr; }
   .trade-divider { padding-top: 0; }
