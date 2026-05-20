@@ -32,29 +32,17 @@ export default function TransactionHistory() {
   const totalRealized = sales.reduce((s, r) => s + (r.sale_price - (r.cards?.actual_cost || 0)), 0)
   const fmt = (n) => { if (n == null) return '—'; const abs = Math.abs(n).toLocaleString(); return (n >= 0 ? '+$' : '-$') + abs }
 
-  // ── 新增：根据 card_id 查找该卡后续的去向 ──────────────────────────────
-  // 返回 { status: 'sold' | 'traded' | null, linkedTxn: txn | null, sale: sale | null }
   const getCardDisposition = (cardId) => {
     if (!cardId) return { status: null, linkedTxn: null, sale: null }
-
-    // 1. 查 card_sales 里是否有卖出记录
     const sale = sales.find(s => s.card_id === cardId)
     if (sale) {
-      // 再找对应的卖出 transaction
-      const linkedTxn = sale.transaction_id
-        ? txns.find(t => t.id === sale.transaction_id)
-        : null
+      const linkedTxn = sale.transaction_id ? txns.find(t => t.id === sale.transaction_id) : null
       return { status: 'sold', linkedTxn, sale }
     }
-
-    // 2. 查其他 transaction 的 out legs 里是否有这张卡（trade out）
     for (const t of txns) {
       const outLegs = (t.transaction_legs || []).filter(l => l.direction === 'out' && l.card_id === cardId)
-      if (outLegs.length > 0) {
-        return { status: 'traded', linkedTxn: t, sale: null }
-      }
+      if (outLegs.length > 0) return { status: 'traded', linkedTxn: t, sale: null }
     }
-
     return { status: null, linkedTxn: null, sale: null }
   }
 
@@ -69,6 +57,17 @@ export default function TransactionHistory() {
             <button key={v} className={`tab-btn ${typeFilter===v?'active':''}`} onClick={() => setTypeFilter(v)}>{l}</button>
           ))}
         </div>
+      </div>
+
+      {/* ── 固定标题行 ── */}
+      <div className="history-header">
+        <div className="history-header-cell">日期</div>
+        <div className="history-header-cell">卡牌 / 交易内容</div>
+        <div className="history-header-cell">类型</div>
+        <div className="history-header-cell">成本</div>
+        <div className="history-header-cell">收入</div>
+        <div className="history-header-cell">盈亏 / 状态</div>
+        <div className="history-header-cell"></div>
       </div>
 
       {filtered.length === 0 ? (
@@ -89,27 +88,20 @@ export default function TransactionHistory() {
             const totalOutCash = outCashLegs.reduce((s, l) => s + (l.cash_amount || 0), 0)
             const totalInCash = inCashLegs.reduce((s, l) => s + (l.cash_amount || 0), 0)
 
-            // ── 买入：计算每张 in 卡的去向 ──────────────────────────────────
-            // dispositions: Array of { leg, status, linkedTxn, sale }
             const buyDispositions = t.type === 'buy'
-              ? inCardLegs.map(leg => ({
-                  leg,
-                  ...getCardDisposition(leg.card_id)
-                }))
+              ? inCardLegs.map(leg => ({ leg, ...getCardDisposition(leg.card_id) }))
               : []
 
-            // 买入整体状态：只要有一张卡还在手里就是"持仓中"
             const buyOverallStatus = (() => {
               if (t.type !== 'buy') return null
               if (buyDispositions.length === 0) return null
               const allGone = buyDispositions.every(d => d.status !== null)
               if (!allGone) return null
-              // 全部已处置：判断主要去向
               const hasSold = buyDispositions.some(d => d.status === 'sold')
               const hasTraded = buyDispositions.some(d => d.status === 'traded')
               if (hasSold && !hasTraded) return 'sold'
               if (hasTraded && !hasSold) return 'traded'
-              return 'mixed' // 有卖出也有 trade
+              return 'mixed'
             })()
 
             return (
@@ -201,7 +193,6 @@ export default function TransactionHistory() {
                         ? <span className="badge badge-settled" style={{ color: 'var(--text3)', background: 'var(--bg4)' }}>已完结</span>
                         : <span className="badge" style={{ color: '#fff', background: 'var(--red)', border: 'none' }}>进行中</span>
                     })()}
-                    {/* ── 买入状态标签 ───────────────────────────── */}
                     {t.type === 'buy' && (
                       buyOverallStatus === 'sold'
                         ? <span className="badge badge-settled" style={{ color: 'var(--text3)', background: 'var(--bg4)' }}>已出售</span>
@@ -227,16 +218,11 @@ export default function TransactionHistory() {
                           <ArrowDownLeft size={14} style={{ color: 'var(--green)', flexShrink: 0 }} />
                           <div>Cash <b>${inLegs[0]?.cash_amount?.toLocaleString()}</b> 买入 <b>{inLegs[0]?.cards?.name || inLegs[0]?.card_name_manual}</b></div>
                         </div>
-
-                        {/* ── 显示每张卡的后续去向 ─────────────────── */}
                         {buyDispositions.map(({ leg, status, linkedTxn, sale: dispSale }) => {
                           if (!status) return null
                           const cardName = leg.cards?.name || leg.card_name_manual
-
                           if (status === 'sold') {
-                            const pnl = dispSale
-                              ? dispSale.sale_price - (leg.cards?.actual_cost || 0)
-                              : null
+                            const pnl = dispSale ? dispSale.sale_price - (leg.cards?.actual_cost || 0) : null
                             return (
                               <React.Fragment key={leg.id}>
                                 <div className="chain-step">
@@ -250,12 +236,8 @@ export default function TransactionHistory() {
                               </React.Fragment>
                             )
                           }
-
                           if (status === 'traded') {
-                            // 找到对应 out leg 里的 agreed_value
-                            const outLeg = (linkedTxn?.transaction_legs || []).find(
-                              l => l.direction === 'out' && l.card_id === leg.card_id
-                            )
+                            const outLeg = (linkedTxn?.transaction_legs || []).find(l => l.direction === 'out' && l.card_id === leg.card_id)
                             return (
                               <React.Fragment key={leg.id}>
                                 <div className="chain-step">
@@ -267,12 +249,8 @@ export default function TransactionHistory() {
                                       <span style={{ marginLeft: 6, color: 'var(--text3)', fontSize: 12 }}>
                                         → 对应交易：{linkedTxn.date}
                                         {(() => {
-                                          // 显示换入的卡
-                                          const gotCards = (linkedTxn.transaction_legs || [])
-                                            .filter(l => l.direction === 'in' && l.card_id)
-                                          const gotCash = (linkedTxn.transaction_legs || [])
-                                            .filter(l => l.direction === 'in' && !l.card_id)
-                                            .reduce((s, l) => s + (l.cash_amount || 0), 0)
+                                          const gotCards = (linkedTxn.transaction_legs || []).filter(l => l.direction === 'in' && l.card_id)
+                                          const gotCash = (linkedTxn.transaction_legs || []).filter(l => l.direction === 'in' && !l.card_id).reduce((s, l) => s + (l.cash_amount || 0), 0)
                                           const parts = []
                                           gotCards.forEach(l => parts.push(l.cards?.name || l.card_name_manual))
                                           if (gotCash > 0) parts.push(`Cash $${gotCash.toLocaleString()}`)
@@ -285,12 +263,10 @@ export default function TransactionHistory() {
                               </React.Fragment>
                             )
                           }
-
                           return null
                         })}
                       </>
                     )}
-
                     {t.type === 'sell' && (<>
                       <div className="chain-step">
                         <ArrowUpRight size={14} style={{ color: 'var(--red)', flexShrink: 0 }} />
@@ -302,7 +278,6 @@ export default function TransactionHistory() {
                       </div>
                       {pnl != null && <div className="chain-step"><span style={{ width: 14, flexShrink: 0 }}>📊</span><div>盈亏：<b className={pnl >= 0 ? 'pos' : 'neg'}>{fmt(pnl)}</b></div></div>}
                     </>)}
-
                     {t.type === 'trade' && (<>
                       {outCardLegs.map(l => (
                         <div key={l.id} className="chain-step">
@@ -330,7 +305,6 @@ export default function TransactionHistory() {
                       )}
                       <div className="chain-step"><span style={{ width: 14, flexShrink: 0 }}>⏳</span><div style={{ color: 'var(--text3)' }}>链条盈亏在所有卡售出后结算</div></div>
                     </>)}
-
                     {t.notes && <div className="chain-step"><span style={{ width: 14, flexShrink: 0 }}>📝</span><div>备注：{t.notes}</div></div>}
                   </div>
                 )}
