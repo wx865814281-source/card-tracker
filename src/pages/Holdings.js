@@ -245,6 +245,52 @@ function CardDetail({ card, onClose, onDeleted, onUpdated }) {
     onClose()
   }
 
+  const [undoInfo, setUndoInfo] = useState(null)
+  const [undoing, setUndoing] = useState(false)
+
+  const prepareUndo = async () => {
+    // 找到让这张卡变成sold的trade交易
+    const tradeLeg = txns.find(l => l.direction === 'out' && l.transactions?.type === 'trade')
+    if (!tradeLeg) return
+    const txnId = tradeLeg.transaction_id
+    const txnDate = tradeLeg.transactions?.date
+
+    // 找到这笔trade产生的所有卡
+    const { data: inLegs } = await supabase
+      .from('transaction_legs')
+      .select('*, cards(name, status)')
+      .eq('transaction_id', txnId)
+      .eq('direction', 'in')
+    
+    const affectedCards = (inLegs || []).filter(l => l.card_id && l.cards)
+    setUndoInfo({ txnId, txnDate, affectedCards, cardName: card.name })
+  }
+
+  const handleUndo = async () => {
+    if (!undoInfo) return
+    setUndoing(true)
+    
+    // 删除整笔trade的所有legs
+    await supabase.from('transaction_legs').delete().eq('transaction_id', undoInfo.txnId)
+    
+    // 删除transaction
+    await supabase.from('transactions').delete().eq('id', undoInfo.txnId)
+    
+    // 删除trade进来的所有卡的sales记录和legs
+    for (const leg of undoInfo.affectedCards) {
+      await supabase.from('card_sales').delete().eq('card_id', leg.card_id)
+      await supabase.from('transaction_legs').delete().eq('card_id', leg.card_id)
+      await supabase.from('cards').delete().eq('id', leg.card_id)
+    }
+    
+    // 恢复这张卡为holding
+    await supabase.from('cards').update({ status: 'holding' }).eq('id', card.id)
+    
+    setUndoing(false)
+    onDeleted()
+    onClose()
+  }
+
   return (
     <>
       {cropSrc && <ImageCropper src={cropSrc} onCrop={handleCrop} onCancel={() => setCropSrc(null)} />}
@@ -333,7 +379,30 @@ function CardDetail({ card, onClose, onDeleted, onUpdated }) {
 
             {saleInfo && <div style={{ marginTop: 12, fontSize: 12, color: 'var(--text3)' }}>售出日期：{saleInfo.sale_date}</div>}
 
-            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '0.5px solid var(--border)' }}>
+            <div style={{ marginTop: 20, paddingTop: 16, borderTop: '0.5px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {card.status === 'sold' && card.source_type !== 'cash' && !undoInfo && (
+                <button onClick={prepareUndo} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', color: 'var(--amber)', fontSize: 13, padding: '6px 0', border: 'none', cursor: 'pointer' }}>
+                  ↩ 撤销售出（恢复 Trade）
+                </button>
+              )}
+              {undoInfo && (
+                <div style={{ background: 'var(--amber-bg)', border: '1px solid var(--amber)', borderRadius: 8, padding: '12px 14px' }}>
+                  <div style={{ fontSize: 13, color: 'var(--amber)', fontWeight: 500, marginBottom: 6 }}>⚠️ 撤销 {undoInfo.txnDate} 的 Trade</div>
+                  <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 8 }}>
+                    以下卡牌将被一并删除：
+                    {undoInfo.affectedCards.map(l => (
+                      <div key={l.card_id} style={{ color: 'var(--text)', fontWeight: 500 }}>• {l.cards?.name}</div>
+                    ))}
+                    <div style={{ marginTop: 6 }}>"{card.name}" 将恢复为持有中</div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={handleUndo} disabled={undoing} style={{ background: 'var(--amber)', color: '#000', border: 'none', borderRadius: 6, padding: '5px 14px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                      {undoing ? '撤销中...' : '确认撤销'}
+                    </button>
+                    <button onClick={() => setUndoInfo(null)} style={{ background: 'none', color: 'var(--text3)', border: 'none', fontSize: 12, cursor: 'pointer' }}>取消</button>
+                  </div>
+                </div>
+              )}
               {!confirmDelete ? (
                 <button onClick={() => setConfirmDelete(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', color: 'var(--red)', fontSize: 13, padding: '6px 0', border: 'none', cursor: 'pointer' }}>
                   <Trash2 size={14} /> 删除这张卡
