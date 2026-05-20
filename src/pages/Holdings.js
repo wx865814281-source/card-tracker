@@ -201,6 +201,9 @@ function CardDetail({ card, onClose, onDeleted, onUpdated }) {
 
   const saleInfo = sales[0]
   const pnl = saleInfo ? saleInfo.sale_price - card.actual_cost : null
+  const tradeOutLeg = txns.find(l => l.direction === 'out' && l.transactions?.type === 'trade')
+  const isTradeOut = card.status === 'sold' && !!tradeOutLeg && !saleInfo
+  const isSold = card.status === 'sold' && !!saleInfo
 
   const getDuration = () => {
     const buyLeg = txns.find(l => l.direction === 'in')
@@ -371,8 +374,8 @@ function CardDetail({ card, onClose, onDeleted, onUpdated }) {
           <div className="modal-body">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 }}>
               <h2 style={{ fontSize: 18, fontWeight: 600, flex: 1 }}>{card.name}</h2>
-              <span className={`badge ${card.status === 'holding' ? 'badge-pending' : 'badge-sold'}`}>
-                {card.status === 'holding' ? '持有中' : '已售出'}
+              <span className={`badge ${card.status === 'holding' ? 'badge-pending' : isTradeOut ? 'badge-trade' : 'badge-sold'}`}>
+                {card.status === 'holding' ? '持有中' : isTradeOut ? '已 Trade Out' : '已售出'}
               </span>
             </div>
 
@@ -413,10 +416,28 @@ function CardDetail({ card, onClose, onDeleted, onUpdated }) {
               <div style={{ marginTop: 16 }}>
                 <div style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 500, marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>交易记录</div>
                 {txns.map(leg => (
-                  <div key={leg.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text2)', padding: '5px 0', borderBottom: '0.5px solid var(--border)' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Calendar size={11} />{leg.transactions?.date}</span>
-                    <span className={`badge badge-${leg.transactions?.type}`} style={{ fontSize: 10 }}>{leg.transactions?.type === 'buy' ? '买入' : leg.transactions?.type === 'sell' ? '卖出' : 'Trade'}</span>
-                    <span>{leg.direction === 'in' ? '得到' : '付出'}</span>
+                  <div key={leg.id} style={{ padding: '6px 0', borderBottom: '0.5px solid var(--border)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--text2)' }}>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Calendar size={11} />{leg.transactions?.date}</span>
+                      <span className={`badge badge-${leg.transactions?.type}`} style={{ fontSize: 10 }}>
+                        {leg.transactions?.type === 'buy' ? '买入' : leg.transactions?.type === 'sell' ? '卖出' : leg.direction === 'out' ? 'Trade Out' : 'Trade In'}
+                      </span>
+                      <span style={{ color: leg.direction === 'in' ? 'var(--green)' : 'var(--red)' }}>
+                        {leg.direction === 'in' ? '得到' : '付出'}
+                      </span>
+                    </div>
+                    {leg.transactions?.type === 'sell' && saleInfo && (
+                      <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 3, paddingLeft: 16 }}>
+                        售出价格：<span style={{ color: 'var(--green)', fontWeight: 500 }}>${saleInfo.sale_price?.toLocaleString()}</span>
+                        ｜成本：${card.actual_cost?.toLocaleString()}
+                        ｜盈亏：<span style={{ color: pnl >= 0 ? 'var(--green)' : 'var(--red)', fontWeight: 500 }}>{pnl >= 0 ? '+' : ''}${pnl?.toLocaleString()}</span>
+                      </div>
+                    )}
+                    {leg.transactions?.type === 'trade' && leg.direction === 'out' && (
+                      <div style={{ fontSize: 11, color: 'var(--text3)', marginTop: 3, paddingLeft: 16 }}>
+                        Trade 日期：{leg.transactions?.date}｜此卡已付出换取新卡
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
