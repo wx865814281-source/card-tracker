@@ -194,7 +194,7 @@ export default function Dashboard({ navigate }) {
                 <th style={{ color: 'var(--text2)' }}>日期</th>
                 <th style={{ color: 'var(--text2)' }}>卡牌 / 交易内容</th>
                 <th style={{ color: 'var(--text2)' }}>类型</th>
-                <th style={{ color: 'var(--text2)' }}>盈亏</th>
+                <th style={{ color: 'var(--text2)' }}>盈亏 / 状态</th>
               </tr>
             </thead>
             <tbody>
@@ -203,7 +203,7 @@ export default function Dashboard({ navigate }) {
                 const pnl = sale ? sale.sale_price - (sale.cards?.actual_cost || 0) : null
                 return (
                   <tr key={t.id}>
-                    <td className="mono">{t.date}</td>
+                    <td className="mono" style={{ whiteSpace: 'nowrap' }}>{t.date.slice(5)}</td>
                     <td style={{ fontSize: 12, color: 'var(--text)' }}>
                       {(() => {
                         const legs = t.transaction_legs || []
@@ -223,8 +223,35 @@ export default function Dashboard({ navigate }) {
                         return '—'
                       })()}
                     </td>
-                    <td><span className={`badge badge-${t.type}`}>{t.type === 'buy' ? '买入' : t.type === 'sell' ? '卖出' : 'Trade'}</span></td>
-                    <td className={pnl != null ? (pnl >= 0 ? 'pos' : 'neg') : ''}>{pnl != null ? fmt(pnl) : '—'}</td>
+                    <td>
+                      {t.type === 'buy' && <span className="badge" style={{ color: '#facc15', background: 'rgba(250,204,21,0.15)', border: '1px solid rgba(250,204,21,0.3)' }}>买入</span>}
+                      {t.type === 'sell' && <span className="badge badge-sell">卖出</span>}
+                      {t.type === 'trade' && <span className="badge badge-trade">Trade</span>}
+                    </td>
+                    <td>
+                      {t.type === 'sell' && pnl != null && <span className={pnl >= 0 ? 'pos' : 'neg'} style={{ fontWeight: 600 }}>{fmt(pnl)}</span>}
+                      {t.type === 'sell' && pnl == null && <span style={{ color: 'var(--text3)' }}>—</span>}
+                      {t.type === 'buy' && (() => {
+                        const inCards = (t.transaction_legs||[]).filter(l => l.direction === 'in' && l.card_id)
+                        const allGone = inCards.length > 0 && inCards.every(l => {
+                          return allSales.some(s => s.card_id === l.card_id) ||
+                            allTxns.some(tx => (tx.transaction_legs||[]).some(tl => tl.direction === 'out' && tl.card_id === l.card_id))
+                        })
+                        const anyTraded = inCards.some(l => allTxns.some(tx => (tx.transaction_legs||[]).some(tl => tl.direction === 'out' && tl.card_id === l.card_id)))
+                        const anySold = inCards.some(l => allSales.some(s => s.card_id === l.card_id))
+                        if (!allGone) return <span className="badge" style={{ color: '#facc15', background: 'rgba(250,204,21,0.15)', border: '1px solid rgba(250,204,21,0.3)', whiteSpace: 'nowrap' }}>未出售</span>
+                        if (anySold && !anyTraded) return <span className="badge badge-settled" style={{ color: 'var(--text3)', background: 'var(--bg4)' }}>已出售</span>
+                        if (anyTraded && !anySold) return <span className="badge" style={{ color: '#a78bfa', background: 'rgba(167,139,250,0.15)', border: '1px solid rgba(167,139,250,0.3)', whiteSpace: 'nowrap' }}>Trade Out</span>
+                        return <span className="badge" style={{ color: 'var(--text3)', background: 'var(--bg4)' }}>已处置</span>
+                      })()}
+                      {t.type === 'trade' && (() => {
+                        const inCards = (t.transaction_legs||[]).filter(l => l.direction === 'in' && l.card_id)
+                        const allSoldOut = inCards.length > 0 && inCards.every(l => allSales.some(s => s.card_id === l.card_id))
+                        return allSoldOut
+                          ? <span className="badge badge-settled" style={{ color: 'var(--text3)', background: 'var(--bg4)' }}>已完结</span>
+                          : <span className="badge" style={{ color: '#fff', background: 'var(--red)', border: 'none', whiteSpace: 'nowrap' }}>进行中</span>
+                      })()}
+                    </td>
                   </tr>
                 )
               })}
