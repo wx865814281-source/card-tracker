@@ -172,7 +172,7 @@ export default function TransactionHistory() {
                   </div>
 
                   <div className="history-type">
-                    <span className={`badge badge-${t.type}`}>{t.type === 'sell' ? '卖出' : t.type === 'trade' ? 'Trade out' : ''}{t.type === 'buy' && <span className="badge" style={{ color: '#facc15', background: 'rgba(250,204,21,0.15)', border: '1px solid rgba(250,204,21,0.3)' }}>买入</span>}</span>
+                    {t.type === 'buy' && <span className="badge" style={{ color: '#facc15', background: 'rgba(250,204,21,0.15)', border: '1px solid rgba(250,204,21,0.3)' }}>买入</span>}{t.type === 'sell' && <span className="badge badge-sell">卖出</span>}{t.type === 'trade' && <span className="badge badge-trade">Trade out</span>}
                   </div>
 
                   <div className="history-cost">
