@@ -148,7 +148,11 @@ export default function AddTransaction({ onSaved, navigate }) {
           <div className="form-group"><label>卡牌名称</label><input placeholder="例：LeBron James 2003 Topps Chrome RC" value={buyCardName} onChange={e => setBuyCardName(e.target.value)} /></div>
           <div className="form-group"><label>购入金额（$）</label><input type="number" placeholder="0.00" value={buyAmount} onChange={e => setBuyAmount(e.target.value)} /></div>
           <div className="form-group"><label>卡牌照片（可选）</label>
-            <label className="photo-upload">
+            <label className="photo-upload"
+              onDragOver={e => { e.preventDefault(); e.currentTarget.style.borderColor = 'var(--accent)' }}
+              onDragLeave={e => { e.currentTarget.style.borderColor = '' }}
+              onDrop={e => { e.preventDefault(); e.currentTarget.style.borderColor = ''; const file = e.dataTransfer.files[0]; if (file && file.type.startsWith('image/')) { setBuyPhoto(file); setBuyPhotoPreview(URL.createObjectURL(file)) } }}
+            >
               {buyPhotoPreview ? <img src={buyPhotoPreview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} /> : <><span style={{ fontSize: 28 }}>📷</span><span>点击或拖拽上传照片</span></>}
               <input type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: 'none' }} />
             </label>
