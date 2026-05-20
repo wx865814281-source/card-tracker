@@ -250,7 +250,21 @@ function CardDetail({ card, onClose, onDeleted, onUpdated }) {
       <div className="modal-overlay" onClick={onClose}>
         <div className="modal-card" onClick={e => e.stopPropagation()}>
           <button className="modal-close" onClick={onClose}><X size={18} /></button>
-          <div className="modal-photo" style={{ position: 'relative', cursor: 'pointer' }} onClick={() => fileRef.current?.click()}>
+          <div className="modal-photo" style={{ position: 'relative', cursor: 'pointer' }}
+            onClick={() => fileRef.current?.click()}
+            onDragOver={e => { e.preventDefault(); e.currentTarget.style.outline = '2px solid var(--accent)' }}
+            onDragLeave={e => { e.currentTarget.style.outline = '' }}
+            onDrop={e => {
+              e.preventDefault()
+              e.currentTarget.style.outline = ''
+              const file = e.dataTransfer.files[0]
+              if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader()
+                reader.onload = (ev) => setCropSrc(ev.target.result)
+                reader.readAsDataURL(file)
+              }
+            }}
+          >
             {photoUrl
               ? <img src={photoUrl} alt={card.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               : <div style={{ fontSize: 48, display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>🃏</div>
