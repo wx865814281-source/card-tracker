@@ -237,9 +237,54 @@ function CardDetail({ card, onClose, onDeleted, onUpdated }) {
 
   const handleDelete = async () => {
     setDeleting(true)
-    await supabase.from('transaction_legs').delete().eq('card_id', card.id)
-    await supabase.from('card_sales').delete().eq('card_id', card.id)
-    await supabase.from('cards').delete().eq('id', card.id)
+
+    // 如果这张卡是 trade 进来的，找到整笔 trade 并恢复付出的卡
+    if (card.source_type === 'trade') {
+      // 找到这张卡所在的 trade transaction
+      const inLeg = txns.find(l => l.direction === 'in')
+      if (inLeg?.transaction_id) {
+        const txnId = inLeg.transaction_id
+
+        // 找到付出的卡（out legs）
+        const { data: outLegs } = await supabase
+          .from('transaction_legs')
+          .select('card_id')
+          .eq('transaction_id', txnId)
+          .eq('direction', 'out')
+
+        // 恢复付出的卡为 holding
+        for (const leg of (outLegs || [])) {
+          if (leg.card_id) {
+            await supabase.from('cards').update({ status: 'holding' }).eq('id', leg.card_id)
+          }
+        }
+
+        // 找到同一笔 trade 的所有 in 卡，一并删除
+        const { data: inLegs } = await supabase
+          .from('transaction_legs')
+          .select('card_id')
+          .eq('transaction_id', txnId)
+          .eq('direction', 'in')
+
+        for (const leg of (inLegs || [])) {
+          if (leg.card_id) {
+            await supabase.from('card_sales').delete().eq('card_id', leg.card_id)
+            await supabase.from('transaction_legs').delete().eq('card_id', leg.card_id)
+            await supabase.from('cards').delete().eq('id', leg.card_id)
+          }
+        }
+
+        // 删除整笔 trade
+        await supabase.from('transaction_legs').delete().eq('transaction_id', txnId)
+        await supabase.from('transactions').delete().eq('id', txnId)
+      }
+    } else {
+      // 普通删除
+      await supabase.from('transaction_legs').delete().eq('card_id', card.id)
+      await supabase.from('card_sales').delete().eq('card_id', card.id)
+      await supabase.from('cards').delete().eq('id', card.id)
+    }
+
     setDeleting(false)
     onDeleted()
     onClose()
@@ -409,7 +454,9 @@ function CardDetail({ card, onClose, onDeleted, onUpdated }) {
                 </button>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 13, color: 'var(--text2)' }}>确认删除？此操作不可撤销</span>
+                  <span style={{ fontSize: 13, color: 'var(--text2)' }}>
+                    {card.source_type === 'trade' ? '确认删除？整笔 Trade 将被撤销，付出的卡将恢复持有中' : '确认删除？此操作不可撤销'}
+                  </span>
                   <button onClick={handleDelete} disabled={deleting} style={{ background: 'var(--red-bg)', color: 'var(--red)', border: '1px solid var(--red)', borderRadius: 6, padding: '5px 12px', fontSize: 12, cursor: 'pointer' }}>
                     {deleting ? '删除中...' : '确认删除'}
                   </button>
