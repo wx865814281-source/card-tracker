@@ -78,7 +78,7 @@ export default function AddTransaction({ onSaved, navigate }) {
       if (type === 'buy') {
         if (!buyCardName || !buyAmount) { setMsg('请填写卡牌名称和金额'); setSaving(false); return }
         const { data: txn } = await supabase.from('transactions').insert({ type: 'buy', date, notes }).select().single()
-        const { data: card } = await supabase.from('cards').insert({ name: buyCardName, source_type: 'cash', actual_cost: parseFloat(buyAmount), status: 'holding' }).select().single()
+        const { data: card } = await supabase.from('cards').insert({ name: buyCardName, source_type: 'cash', actual_cost: parseFloat(buyAmount), agreed_value: Math.round(parseFloat(buyAmount) / 0.88), status: 'holding' }).select().single()
         let photoUrl = null
         if (buyPhoto) photoUrl = await uploadPhoto(buyPhoto, card.id)
         if (photoUrl) await supabase.from('cards').update({ photo_url: photoUrl }).eq('id', card.id)

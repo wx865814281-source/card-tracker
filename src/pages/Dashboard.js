@@ -49,7 +49,7 @@ export default function Dashboard({ navigate }) {
     async function load() {
       const { data: sales } = await supabase.from('card_sales').select('*, cards(actual_cost, name)')
       const { data: cards } = await supabase.from('cards').select('*')
-      const { data: txns } = await supabase.from('transactions').select('*, transaction_legs(*)').order('date', { ascending: false })
+      const { data: txns } = await supabase.from('transactions').select('*, transaction_legs(*, cards(name))').order('date', { ascending: false })
       setAllSales(sales || [])
       setAllCards(cards || [])
       setAllTxns(txns || [])
@@ -189,7 +189,7 @@ export default function Dashboard({ navigate }) {
             <thead>
               <tr>
                 <th style={{ color: 'var(--text2)' }}>日期</th>
-                <th style={{ color: 'var(--text2)' }}>备注</th>
+                <th style={{ color: 'var(--text2)' }}>卡牌 / 交易内容</th>
                 <th style={{ color: 'var(--text2)' }}>类型</th>
                 <th style={{ color: 'var(--text2)' }}>盈亏</th>
               </tr>
@@ -201,7 +201,25 @@ export default function Dashboard({ navigate }) {
                 return (
                   <tr key={t.id}>
                     <td className="mono">{t.date}</td>
-                    <td>{t.notes || '—'}</td>
+                    <td style={{ fontSize: 12, color: 'var(--text)' }}>
+                      {(() => {
+                        const legs = t.transaction_legs || []
+                        if (t.type === 'buy') {
+                          const inLegs = legs.filter(l => l.direction === 'in' && l.card_id)
+                          return inLegs.map(l => l.cards?.name).filter(Boolean).join('、') || '—'
+                        }
+                        if (t.type === 'sell') {
+                          const outLegs = legs.filter(l => l.direction === 'out' && l.card_id)
+                          return outLegs.map(l => l.cards?.name).filter(Boolean).join('、') || '—'
+                        }
+                        if (t.type === 'trade') {
+                          const outCards = legs.filter(l => l.direction === 'out' && l.card_id).map(l => l.cards?.name).filter(Boolean)
+                          const inCards = legs.filter(l => l.direction === 'in' && l.card_id).map(l => l.cards?.name).filter(Boolean)
+                          return <span>{outCards.join('、') || '—'} <span style={{color:'var(--text3)'}}>⇄</span> {inCards.join('、') || '—'}</span>
+                        }
+                        return '—'
+                      })()}
+                    </td>
                     <td><span className={`badge badge-${t.type}`}>{t.type === 'buy' ? '买入' : t.type === 'sell' ? '卖出' : 'Trade'}</span></td>
                     <td className={pnl != null ? (pnl >= 0 ? 'pos' : 'neg') : ''}>{pnl != null ? fmt(pnl) : '—'}</td>
                   </tr>
