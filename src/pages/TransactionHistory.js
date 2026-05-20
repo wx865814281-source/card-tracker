@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { GitBranch, ChevronDown, ChevronUp, ArrowUpRight, ArrowDownLeft } from 'lucide-react'
+import { GitBranch, ChevronDown, ChevronUp, ArrowUpRight, ArrowDownLeft, Pencil, Check, X } from 'lucide-react'
 import './pages.css'
 
 export default function TransactionHistory() {
@@ -9,6 +9,8 @@ export default function TransactionHistory() {
   const [loading, setLoading] = useState(true)
   const [openChains, setOpenChains] = useState({})
   const [typeFilter, setTypeFilter] = useState('all')
+  const [editingId, setEditingId] = useState(null)
+  const [editDate, setEditDate] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -27,6 +29,12 @@ export default function TransactionHistory() {
   }, [])
 
   const toggleChain = (id) => setOpenChains(o => ({ ...o, [id]: !o[id] }))
+
+  const saveDate = async (id) => {
+    await supabase.from('transactions').update({ date: editDate }).eq('id', id)
+    setTxns(txns.map(t => t.id === id ? { ...t, date: editDate } : t))
+    setEditingId(null)
+  }
   const getSaleForTxn = (txnId) => sales.find(s => s.transaction_id === txnId)
   const filtered = txns.filter(t => typeFilter === 'all' ? true : t.type === typeFilter)
   const totalRealized = sales.reduce((s, r) => s + (r.sale_price - (r.cards?.actual_cost || 0)), 0)
@@ -107,7 +115,26 @@ export default function TransactionHistory() {
             return (
               <div key={t.id} className="history-row">
                 <div className="history-main">
-                  <div className="history-date mono">{t.date}</div>
+                  <div className="history-date mono">
+                    {editingId === t.id ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)}
+                          style={{ fontSize: 11, padding: '2px 4px', width: 110 }} />
+                        <div style={{ display: 'flex', gap: 4 }}>
+                          <button onClick={() => saveDate(t.id)} style={{ background: 'var(--green)', color: '#000', border: 'none', borderRadius: 4, padding: '2px 6px', cursor: 'pointer' }}><Check size={11} /></button>
+                          <button onClick={() => setEditingId(null)} style={{ background: 'var(--bg4)', color: 'var(--text2)', border: '1px solid var(--border)', borderRadius: 4, padding: '2px 6px', cursor: 'pointer' }}><X size={11} /></button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span>{t.date}</span>
+                        <button onClick={() => { setEditingId(t.id); setEditDate(t.date) }}
+                          style={{ background: 'none', color: 'var(--text3)', border: 'none', padding: 2, cursor: 'pointer', opacity: 0.6 }}>
+                          <Pencil size={11} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                   <div className="history-center">
                     {t.type === 'sell' && outLegs.map(leg => (
                       <div key={leg.id}>
