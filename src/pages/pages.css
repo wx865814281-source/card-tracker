@@ -158,9 +158,10 @@
 
 @media (max-width: 768px) {
   .metrics-grid { grid-template-columns: 1fr 1fr; }
-  .history-main { grid-template-columns: 60px 1fr 80px 70px 36px; }
+  .history-main { grid-template-columns: 55px 1fr 70px 72px 30px; }
   .history-header { display: none; }
   .history-cost, .history-income { display: none; }
+  .history-pnl { white-space: nowrap; }
   .form-row { grid-template-columns: 1fr; }
   .trade-wrap { grid-template-columns: 1fr; }
   .trade-divider { padding-top: 0; }
