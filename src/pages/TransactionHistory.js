@@ -142,7 +142,17 @@ export default function TransactionHistory() {
 
                   <div className="history-pnl">
                     {t.type === 'sell' && pnl != null && <span className={pnl >= 0 ? 'pos' : 'neg'}>{fmt(pnl)}</span>}
-                    {t.type === 'trade' && <span className="badge badge-settled">进行中</span>}
+                    {t.type === 'trade' && (() => {
+                    // 检查所有 in 的卡是否都已售出
+                    const inCardLegs = inLegs.filter(l => l.card_id)
+                    const allSold = inCardLegs.length > 0 && inCardLegs.every(l => {
+                      const sale = sales.find(s => s.card_id === l.card_id)
+                      return !!sale
+                    })
+                    return allSold
+                      ? <span className="badge badge-settled" style={{ color: 'var(--text3)', background: 'var(--bg4)' }}>已完结</span>
+                      : <span className="badge" style={{ color: '#fff', background: 'var(--red)', border: 'none' }}>进行中</span>
+                  })()}
                     {t.type === 'buy' && <span style={{ color: 'var(--text3)' }}>—</span>}
                   </div>
 
