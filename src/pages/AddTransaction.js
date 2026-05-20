@@ -149,7 +149,7 @@ export default function AddTransaction({ onSaved, navigate }) {
           <div className="form-group"><label>购入金额（$）</label><input type="number" placeholder="0.00" value={buyAmount} onChange={e => setBuyAmount(e.target.value)} /></div>
           <div className="form-group"><label>卡牌照片（可选）</label>
             <label className="photo-upload">
-              {buyPhotoPreview ? <img src={buyPhotoPreview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} /> : <><span style={{ fontSize: 28 }}>📷</span><span>点击上传照片</span></>}
+              {buyPhotoPreview ? <img src={buyPhotoPreview} alt="preview" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8 }} /> : <><span style={{ fontSize: 28 }}>📷</span><span>点击或拖拽上传照片</span></>}
               <input type="file" accept="image/*" onChange={handlePhotoChange} style={{ display: 'none' }} />
             </label>
           </div>
