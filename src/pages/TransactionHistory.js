@@ -197,7 +197,7 @@ export default function TransactionHistory() {
                       buyOverallStatus === 'sold'
                         ? <span className="badge badge-settled" style={{ color: 'var(--text3)', background: 'var(--bg4)' }}>已出售</span>
                         : buyOverallStatus === 'traded'
-                          ? <span className="badge" style={{ color: '#a78bfa', background: 'rgba(167,139,250,0.15)', border: '1px solid rgba(167,139,250,0.3)' }}>Trade Out</span>
+                          ? <span className="badge" style={{ color: '#a78bfa', background: 'rgba(167,139,250,0.15)', border: '1px solid rgba(167,139,250,0.3)', whiteSpace: 'nowrap' }}>Trade Out</span>
                           : buyOverallStatus === 'mixed'
                             ? <span className="badge" style={{ color: 'var(--text3)', background: 'var(--bg4)' }}>已处置</span>
                             : <span className="badge" style={{ color: '#facc15', background: 'rgba(250,204,21,0.15)', border: '1px solid rgba(250,204,21,0.3)' }}>未出售</span>
