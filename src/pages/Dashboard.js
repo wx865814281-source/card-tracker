@@ -80,6 +80,9 @@ export default function Dashboard({ navigate }) {
 
   const realized = filteredSales.reduce((s, r) => s + (r.sale_price - (r.cards?.actual_cost || 0)), 0)
   const cashOut = filteredSales.reduce((s, r) => s + r.sale_price, 0)
+    + filteredTxns.filter(t => t.type === 'trade').reduce((s, t) => {
+      return s + (t.transaction_legs || []).filter(l => l.direction === 'in' && !l.card_id).reduce((a, l) => a + (l.cash_amount || 0), 0)
+    }, 0)
   const holdings = allCards.filter(c => c.status === 'holding').length
   const holdingCost = allCards.filter(c => c.status === 'holding').reduce((s, c) => s + (c.actual_cost || 0), 0)
   const trades = filteredTxns.filter(t => t.type === 'trade').length
