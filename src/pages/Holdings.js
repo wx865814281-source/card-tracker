@@ -559,7 +559,7 @@ export default function Holdings({ navigate }) {
                 <div className="card-name">{card.name}</div>
                 <div className="card-costs">
                   <div className="cost-item"><DollarSign size={12} /><span className="cost-label">实际成本</span><span className="cost-val">${card.actual_cost?.toLocaleString()}</span></div>
-                  {card.agreed_value && <div className="cost-item purple"><span className="cost-label">认可 Value</span><span className="cost-val">${card.agreed_value?.toLocaleString()}</span></div>}
+                  {card.source_type === 'trade' && card.agreed_value && <div className="cost-item purple"><span className="cost-label">认可 Value</span><span className="cost-val">${card.agreed_value?.toLocaleString()}</span></div>}{card.source_type === 'cash' && card.agreed_value && <div className="cost-item purple"><span className="cost-label">参考 Value</span><span className="cost-val">${card.agreed_value?.toLocaleString()}</span></div>}
                 </div>
                 <div className="card-source"><ArrowRight size={11} />{card.source_type === 'cash' ? 'Cash 购入' : card.source_card?.name ? `来自 ${card.source_card.name}` : '来自 Trade'}</div>
               </div>

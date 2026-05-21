@@ -78,7 +78,7 @@ export default function AddTransaction({ onSaved, navigate }) {
       if (type === 'buy') {
         if (!buyCardName || !buyAmount) { setMsg('请填写卡牌名称和金额'); setSaving(false); return }
         const { data: txn } = await supabase.from('transactions').insert({ type: 'buy', date, notes }).select().single()
-        const { data: card } = await supabase.from('cards').insert({ name: buyCardName, source_type: 'cash', actual_cost: parseFloat(buyAmount), agreed_value: Math.round(parseFloat(buyAmount) / 0.88), status: 'holding' }).select().single()
+        const { data: card } = await supabase.from('cards').insert({ name: buyCardName, source_type: 'cash', actual_cost: parseFloat(buyAmount), status: 'holding' }).select().single()
         let photoUrl = null
         if (buyPhoto) photoUrl = await uploadPhoto(buyPhoto, card.id)
         if (photoUrl) await supabase.from('cards').update({ photo_url: photoUrl }).eq('id', card.id)
@@ -183,11 +183,10 @@ export default function AddTransaction({ onSaved, navigate }) {
               </div>
 {tradeOutCards.length > 0 && (
   <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 8, lineHeight: 1.8 }}>
-    <div>付出卡总成本：${totalOutCost.toLocaleString()}{cashOut > 0 && ` + Cash $${cashOut.toLocaleString()}`}</div>
-    <div>预计付出总 Value：
-      {cashOut > 0 && `Cash $${cashOut.toLocaleString()} + `}
-      Value ${tradeOutCards.reduce((s, c) => s + (c.agreed_value || 0), 0).toLocaleString()}
-    </div>
+    <div>付出卡总成本（实际）：<b>${totalOutCost.toLocaleString()}</b>{cashOut > 0 && ` + Cash $${cashOut.toLocaleString()}`}</div>
+    <div>付出卡总Value（双方认可）：<b>
+      ${tradeOutCards.reduce((s, c) => s + (c.agreed_value || 0), 0).toLocaleString()}
+    </b>{cashOut > 0 && ` + Cash $${cashOut.toLocaleString()}`}</div>
   </div>
 )}            </div>
 
