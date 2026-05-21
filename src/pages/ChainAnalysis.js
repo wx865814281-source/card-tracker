@@ -3,66 +3,56 @@ import { supabase } from '../lib/supabase'
 import { Search, ChevronDown, ChevronUp, ArrowUpRight, ArrowDownLeft, GitBranch } from 'lucide-react'
 import './pages.css'
 
-const key_headers = {}
-
 const fmt = (n) => {
   if (n == null) return '—'
   const abs = Math.abs(n).toLocaleString()
   return (n >= 0 ? '+$' : '-$') + abs
 }
 
-// 递归追溯一张卡的完整链条节点
-function ChainNode({ cardId, cardName, depth = 0, allSales, allTxns, visitedIds = new Set() }) {
-  if (visitedIds.has(cardId)) return <div style={{ fontSize: 12, color: 'var(--text3)', marginLeft: depth * 20, paddingLeft: 16 }}>（已在链条中出现，不再展开）</div>
-  const newVisited = new Set(visitedIds)
-  newVisited.add(cardId)
-  const [expanded, setExpanded] = useState(depth === 0)
-  const [parentExpanded, setParentExpanded] = useState({})
+function ChainNode({ cardId, cardName, depth = 0, allSales, allTxns, visited = [] }) {
+  const [expanded, setExpanded] = useState({})
 
-  // 找这张卡的买入/trade-in transaction
-  const inLeg = allTxns
-    .flatMap(t => (t.transaction_legs || []).map(l => ({ ...l, txn: t })))
-    .find(l => l.card_id === cardId && l.direction === 'in')
+  if (visited.includes(cardId)) {
+    return (
+      <div style={{ fontSize: 12, color: 'var(--text3)', paddingLeft: 16, marginTop: 4 }}>
+        （已在链条中出现，不再展开）
+      </div>
+    )
+  }
 
-  // 找这张卡的卖出/trade-out transaction
-  const outLeg = allTxns
-    .flatMap(t => (t.transaction_legs || []).map(l => ({ ...l, txn: t })))
-    .find(l => l.card_id === cardId && l.direction === 'out')
+  const newVisited = [...visited, cardId]
 
+  const allLegs = allTxns.flatMap(t => (t.transaction_legs || []).map(l => ({ ...l, txn: t })))
+
+  const inLeg = allLegs.find(l => l.card_id === cardId && l.direction === 'in')
+  const outLeg = allLegs.find(l => l.card_id === cardId && l.direction === 'out')
   const sale = allSales.find(s => s.card_id === cardId)
 
-  // 同笔 in transaction 的所有 out legs（付出了什么）
   const inTxn = inLeg?.txn
-  const inTxnOutLegs = inTxn
-    ? (inTxn.transaction_legs || []).filter(l => l.direction === 'out')
-    : []
-  const inTxnOutCash = inTxnOutLegs.filter(l => !l.card_id).reduce((s, l) => s + (l.cash_amount || 0), 0)
-  const inTxnOutCards = inTxnOutLegs.filter(l => l.card_id)
+  const inTxnLegs = inTxn ? (inTxn.transaction_legs || []) : []
+  const inTxnOutCards = inTxnLegs.filter(l => l.direction === 'out' && l.card_id)
+  const inTxnOutCash = inTxnLegs.filter(l => l.direction === 'out' && !l.card_id).reduce((s, l) => s + (l.cash_amount || 0), 0)
+  const inTxnInCash = inTxnLegs.filter(l => l.direction === 'in' && !l.card_id).reduce((s, l) => s + (l.cash_amount || 0), 0)
 
-  // 同笔 out transaction 的所有 in legs（换来了什么）
   const outTxn = outLeg?.txn
-  const outTxnInLegs = outTxn
-    ? (outTxn.transaction_legs || []).filter(l => l.direction === 'in')
-    : []
-  const outTxnInCash = outTxnInLegs.filter(l => !l.card_id).reduce((s, l) => s + (l.cash_amount || 0), 0)
-  const outTxnInCards = outTxnInLegs.filter(l => l.card_id)
+  const outTxnLegs = outTxn ? (outTxn.transaction_legs || []) : []
+  const outTxnInCards = outTxnLegs.filter(l => l.direction === 'in' && l.card_id)
+  const outTxnInCash = outTxnLegs.filter(l => l.direction === 'in' && !l.card_id).reduce((s, l) => s + (l.cash_amount || 0), 0)
 
   const isSold = !!sale
-  const isTraded = !!outLeg && outLeg.txn?.type === 'trade'
+  const isTraded = !!outLeg && outTxn?.type === 'trade'
   const isCashBuy = inTxn?.type === 'buy'
 
   return (
     <div style={{ marginLeft: depth * 20, borderLeft: depth > 0 ? '2px solid var(--border)' : 'none', paddingLeft: depth > 0 ? 16 : 0, marginTop: 8 }}>
-      {/* 卡牌标题 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
         <GitBranch size={14} style={{ color: 'var(--accent)', flexShrink: 0 }} />
         <span style={{ fontWeight: 600, fontSize: 14 }}>{cardName}</span>
-        <span className={`badge ${isSold ? 'badge-sell' : 'badge-pending'}`} style={{ fontSize: 10 }}>
+        <span className={`badge ${isSold ? 'badge-sell' : isTraded ? 'badge-trade' : 'badge-pending'}`} style={{ fontSize: 10 }}>
           {isSold ? '已售出' : isTraded ? '已Trade Out' : '持有中'}
         </span>
       </div>
 
-      {/* 买入/来源 */}
       {inTxn && (
         <div style={{ marginBottom: 4 }}>
           {isCashBuy ? (
@@ -70,8 +60,7 @@ function ChainNode({ cardId, cardName, depth = 0, allSales, allTxns, visitedIds 
               <ArrowDownLeft size={13} style={{ color: 'var(--green)', flexShrink: 0 }} />
               <div style={{ fontSize: 12 }}>
                 <span style={{ color: 'var(--text3)' }}>{inTxn.date}</span>
-                {' '}现金买入，花费{' '}
-                <b>${inLeg?.cash_amount?.toLocaleString()}</b>
+                {' '}现金买入，花费 <b>${inLeg?.cash_amount?.toLocaleString()}</b>
               </div>
             </div>
           ) : (
@@ -80,13 +69,11 @@ function ChainNode({ cardId, cardName, depth = 0, allSales, allTxns, visitedIds 
                 <ArrowDownLeft size={13} style={{ color: 'var(--green)', flexShrink: 0 }} />
                 <div style={{ fontSize: 12 }}>
                   <span style={{ color: 'var(--text3)' }}>{inTxn.date}</span>
-                  {' '}Trade 得到，agreed value{' '}
-                  <b>${inLeg?.agreed_value?.toLocaleString() || '—'}</b>
-                  {inTxnOutCash > 0 && <span style={{ color: 'var(--text3)' }}>（对方补 Cash ${inTxnOutCash.toLocaleString()}）</span>}
-                  {inTxnOutCash < 0 && <span style={{ color: 'var(--text3)' }}>（你补 Cash ${Math.abs(inTxnOutCash).toLocaleString()}）</span>}
+                  {' '}Trade 得到，agreed value <b>${inLeg?.agreed_value?.toLocaleString() || '—'}</b>
+                  {inTxnInCash > 0 && <span style={{ color: 'var(--text3)' }}>（对方补 Cash ${inTxnInCash.toLocaleString()}）</span>}
+                  {inTxnOutCash > 0 && <span style={{ color: 'var(--text3)' }}>（你补 Cash ${inTxnOutCash.toLocaleString()}）</span>}
                 </div>
               </div>
-              {/* 付出的卡 */}
               {inTxnOutCards.length > 0 && (
                 <div style={{ marginLeft: 20, marginTop: 4 }}>
                   <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 4 }}>付出的卡：</div>
@@ -95,27 +82,19 @@ function ChainNode({ cardId, cardName, depth = 0, allSales, allTxns, visitedIds 
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
                         <span style={{ color: 'var(--text2)' }}>• {l.cards?.name || '—'}</span>
                         <span style={{ color: 'var(--text3)', fontSize: 11 }}>成本 ${l.cards?.actual_cost?.toLocaleString()}</span>
-                        {l.cards?.source_type === 'trade' && (
+                        {!newVisited.includes(l.card_id) && (
                           <button
-                            onClick={() => setParentExpanded(p => ({ ...p, [l.card_id]: !p[l.card_id] }))}
-                            style={{ background: 'none', color: 'var(--accent)', fontSize: 11, border: '1px solid var(--accent)', borderRadius: 4, padding: '1px 6px', cursor: 'pointer' }}
+                            onClick={() => setExpanded(p => ({ ...p, [l.card_id]: !p[l.card_id] }))}
+                            style={{ background: 'none', color: 'var(--accent)', fontSize: 11, border: '1px solid var(--accent)', borderRadius: 4, padding: '1px 6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2 }}
                           >
-                            {parentExpanded[l.card_id] ? '收起' : '继续追溯'}
-                            {parentExpanded[l.card_id] ? <ChevronUp size={10} style={{ marginLeft: 2 }} /> : <ChevronDown size={10} style={{ marginLeft: 2 }} />}
+                            {expanded[l.card_id] ? '收起' : '继续追溯'}
+                            {expanded[l.card_id] ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
                           </button>
                         )}
-                        {l.cards?.source_type === 'cash' && (
-                          <span style={{ fontSize: 11, color: 'var(--text3)' }}>（现金购入）</span>
-                        )}
+                        {newVisited.includes(l.card_id) && <span style={{ fontSize: 11, color: 'var(--text3)' }}>（已展示）</span>}
                       </div>
-                      {parentExpanded[l.card_id] && (
-                        <ChainNode
-                          cardId={l.card_id}
-                          cardName={l.cards?.name}
-                          depth={depth + 1}
-                          allSales={allSales}
-                          allTxns={allTxns}
-                        />
+                      {expanded[l.card_id] && (
+                        <ChainNode cardId={l.card_id} cardName={l.cards?.name} depth={depth + 1} allSales={allSales} allTxns={allTxns} visited={newVisited} />
                       )}
                     </div>
                   ))}
@@ -126,7 +105,6 @@ function ChainNode({ cardId, cardName, depth = 0, allSales, allTxns, visitedIds 
         </div>
       )}
 
-      {/* 卖出/去向 */}
       {isSold && (
         <div className="chain-step">
           <ArrowUpRight size={13} style={{ color: 'var(--red)', flexShrink: 0 }} />
@@ -157,23 +135,19 @@ function ChainNode({ cardId, cardName, depth = 0, allSales, allTxns, visitedIds 
                 <div key={l.id} style={{ marginBottom: 4 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12 }}>
                     <span style={{ color: 'var(--text2)' }}>• {l.cards?.name || '—'}</span>
-                    <button
-                      onClick={() => setParentExpanded(p => ({ ...p, [l.card_id]: !p[l.card_id] }))}
-                      style={{ background: 'none', color: 'var(--accent)', fontSize: 11, border: '1px solid var(--accent)', borderRadius: 4, padding: '1px 6px', cursor: 'pointer' }}
-                    >
-                      {parentExpanded[l.card_id] ? '收起' : '查看去向'}
-                      {parentExpanded[l.card_id] ? <ChevronUp size={10} style={{ marginLeft: 2 }} /> : <ChevronDown size={10} style={{ marginLeft: 2 }} />}
-                    </button>
+                    {!newVisited.includes(l.card_id) && (
+                      <button
+                        onClick={() => setExpanded(p => ({ ...p, [l.card_id]: !p[l.card_id] }))}
+                        style={{ background: 'none', color: 'var(--accent)', fontSize: 11, border: '1px solid var(--accent)', borderRadius: 4, padding: '1px 6px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 2 }}
+                      >
+                        {expanded[l.card_id] ? '收起' : '查看去向'}
+                        {expanded[l.card_id] ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
+                      </button>
+                    )}
+                    {newVisited.includes(l.card_id) && <span style={{ fontSize: 11, color: 'var(--text3)' }}>（已展示）</span>}
                   </div>
-                  {parentExpanded[l.card_id] && (
-                    <ChainNode
-                      cardId={l.card_id}
-                      cardName={l.cards?.name}
-                      depth={depth + 1}
-                      allSales={allSales}
-                      allTxns={allTxns}
-                      visitedIds={newVisited}
-                    />
+                  {expanded[l.card_id] && (
+                    <ChainNode cardId={l.card_id} cardName={l.cards?.name} depth={depth + 1} allSales={allSales} allTxns={allTxns} visited={newVisited} />
                   )}
                 </div>
               ))}
@@ -201,15 +175,10 @@ export default function ChainAnalysis() {
   const [allTxns, setAllTxns] = useState([])
   const [loading, setLoading] = useState(false)
 
-  const handleSearch = async (q) => {
-    const val = q !== undefined ? q : query
+  const handleSearch = async (val) => {
     if (!val.trim()) { setResults([]); return }
     setSearching(true)
-    const { data } = await supabase
-      .from('cards')
-      .select('*')
-      .ilike('name', `%${val}%`)
-      .order('created_at', { ascending: false })
+    const { data } = await supabase.from('cards').select('*').ilike('name', `%${val}%`).order('created_at', { ascending: false })
     setResults(data || [])
     setSearching(false)
   }
@@ -219,26 +188,19 @@ export default function ChainAnalysis() {
     setResults([])
     setQuery(card.name)
     setLoading(true)
-    const { data: sales } = await supabase
-      .from('card_sales')
-      .select('*, cards(actual_cost, name)')
-    const { data: txns } = await supabase
-      .from('transactions')
-      .select('*, transaction_legs(*, cards(name, actual_cost, agreed_value, source_type))')
-      .order('date', { ascending: true })
+    const { data: sales } = await supabase.from('card_sales').select('*, cards(actual_cost, name)')
+    const { data: txns } = await supabase.from('transactions').select('*, transaction_legs(*, cards(name, actual_cost, agreed_value, source_type))').order('date', { ascending: true })
     setAllSales(sales || [])
     setAllTxns(txns || [])
     setLoading(false)
   }
 
-  // 计算这张卡的直接 cash 流汇总
   const getCashSummary = () => {
     if (!selected || !allTxns.length) return null
-    const inLeg = allTxns
-      .flatMap(t => (t.transaction_legs || []).map(l => ({ ...l, txn: t })))
-      .find(l => l.card_id === selected.id && l.direction === 'in')
+    const allLegs = allTxns.flatMap(t => (t.transaction_legs || []).map(l => ({ ...l, txn: t })))
+    const inLeg = allLegs.find(l => l.card_id === selected.id && l.direction === 'in')
     const sale = allSales.find(s => s.card_id === selected.id)
-    const cashPaid = inLeg?.txn?.type === 'buy' ? (inLeg.cash_amount || 0) : (selected.actual_cost || 0)
+    const cashPaid = selected.actual_cost || 0
     const cashReceived = sale ? sale.sale_price : 0
     return { cashPaid, cashReceived, net: cashReceived - cashPaid, settled: !!sale }
   }
@@ -252,7 +214,6 @@ export default function ChainAnalysis() {
         <p className="page-sub">追踪一张卡从买入到卖出的完整 Cash 流</p>
       </div>
 
-      {/* 搜索框 */}
       <div style={{ position: 'relative', marginBottom: 16, maxWidth: 500 }}>
         <div className="picker-search" style={{ background: 'var(--bg2)', border: '1px solid var(--border2)' }}>
           <Search size={15} />
@@ -260,15 +221,9 @@ export default function ChainAnalysis() {
             placeholder="搜索卡牌名称..."
             value={query}
             onChange={e => { setQuery(e.target.value); setSelected(null); handleSearch(e.target.value) }}
-            onKeyDown={e => e.key === 'Enter' && handleSearch()}
             style={{ flex: 1 }}
           />
-          <button
-            onClick={handleSearch}
-            style={{ background: 'var(--accent)', color: '#000', border: 'none', borderRadius: 6, padding: '4px 12px', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}
-          >
-            {searching ? '搜索中...' : '搜索'}
-          </button>
+          {searching && <span style={{ fontSize: 11, color: 'var(--text3)' }}>搜索中...</span>}
         </div>
         {results.length > 0 && (
           <div className="picker-list" style={{ zIndex: 50 }}>
@@ -288,7 +243,6 @@ export default function ChainAnalysis() {
 
       {selected && !loading && (
         <>
-          {/* Cash 汇总 */}
           {summary && (
             <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
               <div className="metric-card" style={{ flex: 1, minWidth: 140 }}>
@@ -302,7 +256,7 @@ export default function ChainAnalysis() {
                 </div>
               </div>
               <div className="metric-card" style={{ flex: 1, minWidth: 140 }}>
-                <div className="metric-label">净盈亏（直接）</div>
+                <div className="metric-label">净盈亏（直接成本）</div>
                 <div className={`metric-value ${summary.net >= 0 ? 'pos' : 'neg'}`}>
                   {summary.settled ? fmt(summary.net) : '未结算'}
                 </div>
@@ -310,7 +264,6 @@ export default function ChainAnalysis() {
             </div>
           )}
 
-          {/* 链条详情 */}
           <div className="section-card">
             <div className="section-title">完整链条</div>
             <ChainNode
@@ -319,6 +272,7 @@ export default function ChainAnalysis() {
               depth={0}
               allSales={allSales}
               allTxns={allTxns}
+              visited={[]}
             />
           </div>
         </>
