@@ -35,6 +35,7 @@ export default function TransactionHistory() {
 
   const saveDate = async (id) => {
     await supabase.from('transactions').update({ date: editDate }).eq('id', id)
+    await supabase.from('card_sales').update({ sale_date: editDate }).eq('transaction_id', id)
     setTxns(txns.map(t => t.id === id ? { ...t, date: editDate } : t))
     setEditingId(null)
   }
