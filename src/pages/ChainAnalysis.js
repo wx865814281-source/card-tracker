@@ -12,7 +12,10 @@ const fmt = (n) => {
 }
 
 // 递归追溯一张卡的完整链条节点
-function ChainNode({ cardId, cardName, depth = 0, allSales, allTxns }) {
+function ChainNode({ cardId, cardName, depth = 0, allSales, allTxns, visitedIds = new Set() }) {
+  if (visitedIds.has(cardId)) return <div style={{ fontSize: 12, color: 'var(--text3)', marginLeft: depth * 20, paddingLeft: 16 }}>（已在链条中出现，不再展开）</div>
+  const newVisited = new Set(visitedIds)
+  newVisited.add(cardId)
   const [expanded, setExpanded] = useState(depth === 0)
   const [parentExpanded, setParentExpanded] = useState({})
 
@@ -169,6 +172,7 @@ function ChainNode({ cardId, cardName, depth = 0, allSales, allTxns }) {
                       depth={depth + 1}
                       allSales={allSales}
                       allTxns={allTxns}
+                      visitedIds={newVisited}
                     />
                   )}
                 </div>
@@ -197,13 +201,14 @@ export default function ChainAnalysis() {
   const [allTxns, setAllTxns] = useState([])
   const [loading, setLoading] = useState(false)
 
-  const handleSearch = async () => {
-    if (!query.trim()) return
+  const handleSearch = async (q) => {
+    const val = q !== undefined ? q : query
+    if (!val.trim()) { setResults([]); return }
     setSearching(true)
     const { data } = await supabase
       .from('cards')
       .select('*')
-      .ilike('name', `%${query}%`)
+      .ilike('name', `%${val}%`)
       .order('created_at', { ascending: false })
     setResults(data || [])
     setSearching(false)
@@ -254,7 +259,7 @@ export default function ChainAnalysis() {
           <input
             placeholder="搜索卡牌名称..."
             value={query}
-            onChange={e => { setQuery(e.target.value); setSelected(null) }}
+            onChange={e => { setQuery(e.target.value); setSelected(null); handleSearch(e.target.value) }}
             onKeyDown={e => e.key === 'Enter' && handleSearch()}
             style={{ flex: 1 }}
           />
