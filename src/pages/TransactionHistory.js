@@ -39,10 +39,6 @@ export default function TransactionHistory() {
     setEditingId(null)
   }
   const getSaleForTxn = (txnId) => sales.find(s => s.transaction_id === txnId)
-  const filtered = txns.filter(t => (typeFilter === 'all' ? true : t.type === typeFilter) && inRange(t.date))
-  const totalRealized = sales.filter(r => inRange(r.sale_date)).reduce((s, r) => s + (r.sale_price - (r.cards?.actual_cost || 0)), 0)
-  const fmt = (n) => { if (n == null) return '—'; const abs = Math.abs(n).toLocaleString(); return (n >= 0 ? '+$' : '-$') + abs }
-
   const getPeriodRange = () => {
     const now = new Date()
     const y = now.getFullYear()
@@ -63,6 +59,10 @@ export default function TransactionHistory() {
     if (end && d > end) return false
     return true
   }
+
+  const filtered = txns.filter(t => (typeFilter === 'all' ? true : t.type === typeFilter) && inRange(t.date))
+  const totalRealized = sales.filter(r => inRange(r.sale_date)).reduce((s, r) => s + (r.sale_price - (r.cards?.actual_cost || 0)), 0)
+  const fmt = (n) => { if (n == null) return '—'; const abs = Math.abs(n).toLocaleString(); return (n >= 0 ? '+$' : '-$') + abs }
 
   const getCardDisposition = (cardId) => {
     if (!cardId) return { status: null, linkedTxn: null, sale: null }
