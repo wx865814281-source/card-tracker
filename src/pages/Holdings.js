@@ -386,7 +386,7 @@ function CardDetail({ card, onClose, onDeleted, onUpdated }) {
               </div>
               {card.agreed_value && (
                 <div className="detail-item">
-                  <div className="detail-label">认可 Value</div>
+                  <div className="detail-label">{card.source_type === 'cash' ? '参考 Value' : '认可 Value'}</div>
                   <div className="detail-value purple">${card.agreed_value?.toLocaleString()}</div>
                 </div>
               )}

@@ -184,9 +184,12 @@ export default function AddTransaction({ onSaved, navigate }) {
 {tradeOutCards.length > 0 && (
   <div style={{ fontSize: 12, color: 'var(--text3)', marginTop: 8, lineHeight: 1.8 }}>
     <div>付出卡总成本（实际）：<b>${totalOutCost.toLocaleString()}</b>{cashOut > 0 && ` + Cash $${cashOut.toLocaleString()}`}</div>
-    <div>付出卡总Value（双方认可）：<b>
-      ${tradeOutCards.reduce((s, c) => s + (c.agreed_value || 0), 0).toLocaleString()}
-    </b>{cashOut > 0 && ` + Cash $${cashOut.toLocaleString()}`}</div>
+    <div>付出卡总Value：<b>
+      ${tradeOutCards.reduce((s, c) => s + (c.source_type === 'trade' ? (c.agreed_value || 0) : Math.round((c.actual_cost || 0) / 0.88)), 0).toLocaleString()}
+    </b>{cashOut > 0 && ` + Cash $${cashOut.toLocaleString()}`}
+    <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 4 }}>
+      （Trade卡用认可Value，现金卡用Cost/0.88）
+    </span></div>
   </div>
 )}            </div>
 
