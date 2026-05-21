@@ -101,9 +101,9 @@ export default function TransactionHistory() {
       {period === 'custom' && (
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', background: 'var(--bg2)', padding: '12px 16px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', marginBottom: 12 }}>
           <span style={{ fontSize: 13, color: 'var(--text2)' }}>从</span>
-          <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)} style={{ width: 150 }} />
+          <input type="date" min="2000-01-01" max="2099-12-31" value={customStart} onChange={e => setCustomStart(e.target.value)} style={{ width: 150 }} />
           <span style={{ fontSize: 13, color: 'var(--text2)' }}>到</span>
-          <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)} style={{ width: 150 }} />
+          <input type="date" min="2000-01-01" max="2099-12-31" value={customEnd} onChange={e => setCustomEnd(e.target.value)} style={{ width: 150 }} />
         </div>
       )}
       {/* ── 固定标题行 ── */}
@@ -157,7 +157,7 @@ export default function TransactionHistory() {
                   <div className="history-date mono">
                     {editingId === t.id ? (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)}
+                        <input type="date" min="2000-01-01" max="2099-12-31" value={editDate} onChange={e => setEditDate(e.target.value)}
                           style={{ fontSize: 11, padding: '2px 4px', width: 110 }} />
                         <div style={{ display: 'flex', gap: 4 }}>
                           <button onClick={() => saveDate(t.id)} style={{ background: 'var(--green)', color: '#000', border: 'none', borderRadius: 4, padding: '2px 6px', cursor: 'pointer' }}><Check size={11} /></button>

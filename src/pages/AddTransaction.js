@@ -141,7 +141,7 @@ export default function AddTransaction({ onSaved, navigate }) {
               ))}
             </div>
           </div>
-          <div className="form-group"><label>交易日期</label><input type="date" value={date} onChange={e => setDate(e.target.value)} /></div>
+          <div className="form-group"><label>交易日期</label><input type="date" min="2000-01-01" max="2099-12-31" value={date} onChange={e => setDate(e.target.value)} /></div>
         </div>
 
         {type === 'buy' && (<>

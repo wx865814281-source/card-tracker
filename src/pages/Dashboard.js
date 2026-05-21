@@ -119,9 +119,9 @@ export default function Dashboard({ navigate }) {
       {period === 'custom' && (
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', background: 'var(--bg2)', padding: '12px 16px', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
           <span style={{ fontSize: 13, color: 'var(--text2)' }}>从</span>
-          <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)} style={{ width: 150 }} />
+          <input type="date" min="2000-01-01" max="2099-12-31" value={customStart} onChange={e => setCustomStart(e.target.value)} style={{ width: 150 }} />
           <span style={{ fontSize: 13, color: 'var(--text2)' }}>到</span>
-          <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)} style={{ width: 150 }} />
+          <input type="date" min="2000-01-01" max="2099-12-31" value={customEnd} onChange={e => setCustomEnd(e.target.value)} style={{ width: 150 }} />
         </div>
       )}
 
