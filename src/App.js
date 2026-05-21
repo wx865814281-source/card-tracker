@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
-import { LayoutDashboard, Layers, History, Plus, FileSpreadsheet, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Layers, History, Plus, FileSpreadsheet, Menu, X, GitBranch } from 'lucide-react'
 import Dashboard from './pages/Dashboard'
 import Holdings from './pages/Holdings'
 import TransactionHistory from './pages/TransactionHistory'
 import AddTransaction from './pages/AddTransaction'
+import ChainAnalysis from './pages/ChainAnalysis'
 import './App.css'
 
 const NAV = [
@@ -11,6 +12,7 @@ const NAV = [
   { id: 'holdings', label: '持仓卡牌', icon: Layers },
   { id: 'history', label: '交易历史', icon: History },
   { id: 'add', label: '新增交易', icon: Plus },
+  { id: 'chain', label: '链条分析', icon: GitBranch },
 ]
 
 export default function App() {
@@ -21,7 +23,7 @@ export default function App() {
   const navigate = (p) => { setPage(p); setMenuOpen(false) }
   const onSaved = () => { setRefresh(r => r + 1); setPage('history') }
 
-  const pages = { dashboard: Dashboard, holdings: Holdings, history: TransactionHistory, add: AddTransaction }
+  const pages = { dashboard: Dashboard, holdings: Holdings, history: TransactionHistory, add: AddTransaction, chain: ChainAnalysis }
   const PageComponent = pages[page]
 
   return (
