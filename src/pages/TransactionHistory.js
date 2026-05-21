@@ -11,6 +11,9 @@ export default function TransactionHistory() {
   const [typeFilter, setTypeFilter] = useState('all')
   const [editingId, setEditingId] = useState(null)
   const [editDate, setEditDate] = useState('')
+  const [period, setPeriod] = useState('all')
+  const [customStart, setCustomStart] = useState('')
+  const [customEnd, setCustomEnd] = useState('')
 
   useEffect(() => {
     async function load() {
@@ -36,9 +39,30 @@ export default function TransactionHistory() {
     setEditingId(null)
   }
   const getSaleForTxn = (txnId) => sales.find(s => s.transaction_id === txnId)
-  const filtered = txns.filter(t => typeFilter === 'all' ? true : t.type === typeFilter)
-  const totalRealized = sales.reduce((s, r) => s + (r.sale_price - (r.cards?.actual_cost || 0)), 0)
+  const filtered = txns.filter(t => (typeFilter === 'all' ? true : t.type === typeFilter) && inRange(t.date))
+  const totalRealized = sales.filter(r => inRange(r.sale_date)).reduce((s, r) => s + (r.sale_price - (r.cards?.actual_cost || 0)), 0)
   const fmt = (n) => { if (n == null) return '—'; const abs = Math.abs(n).toLocaleString(); return (n >= 0 ? '+$' : '-$') + abs }
+
+  const getPeriodRange = () => {
+    const now = new Date()
+    const y = now.getFullYear()
+    const m = now.getMonth()
+    if (period === 'this_month') return [new Date(y, m, 1), new Date(y, m+1, 0, 23, 59, 59)]
+    if (period === 'last_month') return [new Date(y, m-1, 1), new Date(y, m, 0, 23, 59, 59)]
+    if (period === 'this_year') return [new Date(y, 0, 1), new Date(y, 11, 31, 23, 59, 59)]
+    if (period === 'last_year') return [new Date(y-1, 0, 1), new Date(y-1, 11, 31, 23, 59, 59)]
+    if (period === 'custom') return [customStart ? new Date(customStart) : null, customEnd ? new Date(customEnd) : null]
+    return [null, null]
+  }
+
+  const inRange = (dateStr) => {
+    const [start, end] = getPeriodRange()
+    if (!start && !end) return true
+    const d = new Date(dateStr + 'T12:00:00')
+    if (start && d < start) return false
+    if (end && d > end) return false
+    return true
+  }
 
   const getCardDisposition = (cardId) => {
     if (!cardId) return { status: null, linkedTxn: null, sale: null }
@@ -67,6 +91,21 @@ export default function TransactionHistory() {
         </div>
       </div>
 
+
+      {/* 时间筛选 */}
+      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
+        {[['all','全部'],['this_month','本月'],['last_month','上月'],['this_year','今年'],['last_year','去年'],['custom','自定义']].map(([v,l]) => (
+          <button key={v} className={`tab-btn ${period===v?'active':''}`} onClick={() => setPeriod(v)}>{l}</button>
+        ))}
+      </div>
+      {period === 'custom' && (
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', background: 'var(--bg2)', padding: '12px 16px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', marginBottom: 12 }}>
+          <span style={{ fontSize: 13, color: 'var(--text2)' }}>从</span>
+          <input type="date" value={customStart} onChange={e => setCustomStart(e.target.value)} style={{ width: 150 }} />
+          <span style={{ fontSize: 13, color: 'var(--text2)' }}>到</span>
+          <input type="date" value={customEnd} onChange={e => setCustomEnd(e.target.value)} style={{ width: 150 }} />
+        </div>
+      )}
       {/* ── 固定标题行 ── */}
       <div className="history-header">
         <div className="history-header-cell">日期</div>
