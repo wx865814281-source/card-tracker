@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { TrendingUp, TrendingDown, Layers, ArrowRightLeft } from 'lucide-react'
+import { TrendingUp, TrendingDown, Layers } from 'lucide-react'
 import './pages.css'
 
 const PERIODS = [
@@ -153,9 +153,11 @@ export default function Dashboard({ navigate }) {
         </div>
         <div className="metric-card">
           <div className="metric-label" style={{ color: 'var(--text2)' }}>
-            {period === 'all' ? 'Trade 总次数' : '期间 Trade 次数'}
+            {period === 'all' ? '净投入 Cash' : '期间净投入 Cash'}
           </div>
-          <div className="metric-value purple"><ArrowRightLeft size={18} /> {trades} 次</div>
+          <div className={`metric-value ${cashIn - cashOut >= 0 ? '' : 'pos'}`}>
+            {cashIn - cashOut >= 0 ? '-' : '+'}${Math.abs(cashIn - cashOut).toLocaleString()}
+          </div>
         </div>
       </div>
 
