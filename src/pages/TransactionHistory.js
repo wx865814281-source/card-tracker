@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { GitBranch, ChevronDown, ChevronUp, ArrowUpRight, ArrowDownLeft, Pencil, Check, X } from 'lucide-react'
+import { lang } from '../lib/i18n'
 import './pages.css'
 
-export default function TransactionHistory() {
+export default function TransactionHistory({ language = 'zh' }) {
+  const T = (key) => lang(key, language)
   const [txns, setTxns] = useState([])
   const [sales, setSales] = useState([])
   const [loading, setLoading] = useState(true)
@@ -84,9 +86,9 @@ export default function TransactionHistory() {
   return (
     <div className="page">
       <div className="page-header-row">
-        <div><h1>交易历史</h1><p className="page-sub">所有买入、卖出和 Trade 记录</p></div>
+        <div><h1>{T('historyTitle')}</h1><p className="page-sub">{T('historySub')}</p></div>
         <div className="filter-tabs" style={{ marginBottom: 0 }}>
-          {[['all','全部'],['buy','买入'],['sell','卖出'],['trade','Trade']].map(([v,l]) => (
+          {[['all',T('all')],['buy',T('buy')],['sell',T('sell')],['trade',T('trade')]].map(([v,l]) => (
             <button key={v} className={`tab-btn ${typeFilter===v?'active':''}`} onClick={() => setTypeFilter(v)}>{l}</button>
           ))}
         </div>
@@ -95,31 +97,31 @@ export default function TransactionHistory() {
 
       {/* 时间筛选 */}
       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', marginBottom: 12 }}>
-        {[['all','全部'],['this_month','本月'],['last_month','上月'],['this_year','今年'],['last_year','去年'],['custom','自定义']].map(([v,l]) => (
+        {[['all',T('all')],['this_month',T('thisMonth')],['last_month',T('lastMonth')],['this_year',T('thisYear')],['last_year',T('lastYear')],['custom',T('custom')]].map(([v,l]) => (
           <button key={v} className={`tab-btn ${period===v?'active':''}`} onClick={() => setPeriod(v)}>{l}</button>
         ))}
       </div>
       {period === 'custom' && (
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', background: 'var(--bg2)', padding: '12px 16px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', marginBottom: 12 }}>
-          <span style={{ fontSize: 13, color: 'var(--text2)' }}>从</span>
+          <span style={{ fontSize: 13, color: 'var(--text2)' }}>{T('from')}</span>
           <input type="date" min="2000-01-01" max="2099-12-31" value={customStart} onChange={e => setCustomStart(e.target.value)} style={{ width: 150 }} />
-          <span style={{ fontSize: 13, color: 'var(--text2)' }}>到</span>
+          <span style={{ fontSize: 13, color: 'var(--text2)' }}>{T('to')}</span>
           <input type="date" min="2000-01-01" max="2099-12-31" value={customEnd} onChange={e => setCustomEnd(e.target.value)} style={{ width: 150 }} />
         </div>
       )}
       {/* ── 固定标题行 ── */}
       <div className="history-header">
-        <div className="history-header-cell">日期</div>
-        <div className="history-header-cell">卡牌 / 交易内容</div>
-        <div className="history-header-cell">类型</div>
-        <div className="history-header-cell">成本</div>
-        <div className="history-header-cell">收入</div>
-        <div className="history-header-cell">盈亏 / 状态</div>
+        <div className="history-header-cell">{T('date')}</div>
+        <div className="history-header-cell">{T('cardContent')}</div>
+        <div className="history-header-cell">{T('type')}</div>
+        <div className="history-header-cell">{T('cost')}</div>
+        <div className="history-header-cell">{T('income')}</div>
+        <div className="history-header-cell">{T('pnlStatus')}</div>
         <div className="history-header-cell"></div>
       </div>
 
       {filtered.length === 0 ? (
-        <div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--text2)' }}>暂无交易记录</div>
+        <div style={{ padding: '60px 0', textAlign: 'center', color: 'var(--text2)' }}>{T('noHistory')}</div>
       ) : (
         <div className="history-list">
           {filtered.map(t => {
@@ -212,7 +214,7 @@ export default function TransactionHistory() {
                   </div>
 
                   <div className="history-type">
-                    {t.type === 'buy' && <span className="badge" style={{ color: '#facc15', background: 'rgba(250,204,21,0.15)', border: '1px solid rgba(250,204,21,0.3)' }}>买入</span>}{t.type === 'sell' && <span className="badge badge-sell">卖出</span>}{t.type === 'trade' && <span className="badge badge-trade">Trade out</span>}
+                    {t.type === 'buy' && <span className="badge" style={{ color: '#facc15', background: 'rgba(250,204,21,0.15)', border: '1px solid rgba(250,204,21,0.3)' }}>{T('buy')}</span>}{t.type === 'sell' && <span className="badge badge-sell">{T('sell')}</span>}{t.type === 'trade' && <span className="badge badge-trade">{T('tradeOut')}</span>}
                   </div>
 
                   <div className="history-cost">
@@ -337,42 +339,42 @@ export default function TransactionHistory() {
                     {t.type === 'sell' && (<>
                       <div className="chain-step">
                         <ArrowUpRight size={14} style={{ color: 'var(--red)', flexShrink: 0 }} />
-                        <div>付出：<b>{outLegs[0]?.cards?.name}</b>｜成本 ${outLegs[0]?.cards?.actual_cost?.toLocaleString()}{outLegs[0]?.cards?.agreed_value ? `｜value $${outLegs[0].cards.agreed_value.toLocaleString()}` : ''}</div>
+                        <div>{T('paidOut')}<b>{outLegs[0]?.cards?.name}</b>｜成本 ${outLegs[0]?.cards?.actual_cost?.toLocaleString()}{outLegs[0]?.cards?.agreed_value ? `｜value $${outLegs[0].cards.agreed_value.toLocaleString()}` : ''}</div>
                       </div>
                       <div className="chain-step">
                         <ArrowDownLeft size={14} style={{ color: 'var(--green)', flexShrink: 0 }} />
-                        <div>得到：Cash <b>${sale?.sale_price?.toLocaleString()}</b></div>
+                        <div>{T('received')}Cash <b>${sale?.sale_price?.toLocaleString()}</b></div>
                       </div>
-                      {pnl != null && <div className="chain-step"><span style={{ width: 14, flexShrink: 0 }}>📊</span><div>盈亏：<b className={pnl >= 0 ? 'pos' : 'neg'}>{fmt(pnl)}</b></div></div>}
+                      {pnl != null && <div className="chain-step"><span style={{ width: 14, flexShrink: 0 }}>📊</span><div>{T('chainPnl')}<b className={pnl >= 0 ? 'pos' : 'neg'}>{fmt(pnl)}</b></div></div>}
                     </>)}
                     {t.type === 'trade' && (<>
                       {outCardLegs.map(l => (
                         <div key={l.id} className="chain-step">
                           <ArrowUpRight size={14} style={{ color: 'var(--red)', flexShrink: 0 }} />
-                          <div>付出卡：<b>{l.cards?.name || l.card_name_manual}</b>｜成本 ${l.cards?.actual_cost?.toLocaleString()}{l.cards?.agreed_value ? `｜value $${l.cards.agreed_value.toLocaleString()}` : ''}</div>
+                          <div>{T('paidCard')}<b>{l.cards?.name || l.card_name_manual}</b>｜成本 ${l.cards?.actual_cost?.toLocaleString()}{l.cards?.agreed_value ? `｜value $${l.cards.agreed_value.toLocaleString()}` : ''}</div>
                         </div>
                       ))}
                       {totalOutCash > 0 && (
                         <div className="chain-step">
                           <ArrowUpRight size={14} style={{ color: 'var(--red)', flexShrink: 0 }} />
-                          <div>付出：Cash <b>${totalOutCash.toLocaleString()}</b></div>
+                          <div>{T('paidOut')}Cash <b>${totalOutCash.toLocaleString()}</b></div>
                         </div>
                       )}
                       {inCardLegs.map(l => (
                         <div key={l.id} className="chain-step">
                           <ArrowDownLeft size={14} style={{ color: 'var(--green)', flexShrink: 0 }} />
-                          <div>得到卡：<b>{l.cards?.name || l.card_name_manual}</b>{l.agreed_value ? `｜认可Value $${l.agreed_value.toLocaleString()}｜实际成本 $${l.cards?.actual_cost?.toLocaleString()}` : ''}</div>
+                          <div>{T('receivedCard')}<b>{l.cards?.name || l.card_name_manual}</b>{l.agreed_value ? `｜{T('agreedValueLabel')} $${l.agreed_value.toLocaleString()}｜{T('actualCostLabel')} $${l.cards?.actual_cost?.toLocaleString()}` : ''}</div>
                         </div>
                       ))}
                       {totalInCash > 0 && (
                         <div className="chain-step">
                           <ArrowDownLeft size={14} style={{ color: 'var(--green)', flexShrink: 0 }} />
-                          <div>得到：Cash <b>${totalInCash.toLocaleString()}</b></div>
+                          <div>{T('received')}Cash <b>${totalInCash.toLocaleString()}</b></div>
                         </div>
                       )}
-                      <div className="chain-step"><span style={{ width: 14, flexShrink: 0 }}>⏳</span><div style={{ color: 'var(--text3)' }}>链条盈亏在所有卡售出后结算</div></div>
+                      <div className="chain-step"><span style={{ width: 14, flexShrink: 0 }}>⏳</span><div style={{ color: 'var(--text3)' }}>{T('chainPending')}</div></div>
                     </>)}
-                    {t.notes && <div className="chain-step"><span style={{ width: 14, flexShrink: 0 }}>📝</span><div>备注：{t.notes}</div></div>}
+                    {t.notes && <div className="chain-step"><span style={{ width: 14, flexShrink: 0 }}>📝</span><div>{T('chainNote')}{t.notes}</div></div>}
                   </div>
                 )}
               </div>
@@ -382,7 +384,7 @@ export default function TransactionHistory() {
       )}
 
       <div className="summary-bar">
-        <span style={{ color: 'var(--text2)' }}>已结算盈亏合计</span>
+        <span style={{ color: 'var(--text2)' }}>{T('totalPnl')}</span>
         <span className={totalRealized >= 0 ? 'pos' : 'neg'} style={{ fontSize: 15, fontWeight: 600 }}>{fmt(totalRealized)}</span>
       </div>
     </div>

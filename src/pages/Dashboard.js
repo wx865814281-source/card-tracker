@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { TrendingUp, TrendingDown, Layers } from 'lucide-react'
+import { lang } from '../lib/i18n'
 import './pages.css'
 
 const PERIODS = [
-  { label: '本月', value: 'this_month' },
-  { label: '上月', value: 'last_month' },
-  { label: '今年', value: 'this_year' },
-  { label: '去年', value: 'last_year' },
-  { label: '全部', value: 'all' },
-  { label: '自定义', value: 'custom' },
+  { label: {T('thisMonth')}, value: 'this_month' },
+  { label: {T('lastMonth')}, value: 'last_month' },
+  { label: {T('thisYear')}, value: 'this_year' },
+  { label: {T('lastYear')}, value: 'last_year' },
+  { label: {T('all')}, value: 'all' },
+  { label: {T('custom')}, value: 'custom' },
 ]
 
 function getPeriodRange(period) {
@@ -36,7 +37,8 @@ function inRange(dateStr, start, end) {
   return true
 }
 
-export default function Dashboard({ navigate }) {
+export default function Dashboard({ navigate, language = 'zh' }) {
+  const T = (key) => lang(key, language)
   const [period, setPeriod] = useState('all')
   const [customStart, setCustomStart] = useState('')
   const [customEnd, setCustomEnd] = useState('')
@@ -105,7 +107,7 @@ export default function Dashboard({ navigate }) {
       <div className="page-header-row">
         <div>
           <h1>Dashboard</h1>
-          <p className="page-sub">总览你的球星卡交易数据</p>
+          <p className="page-sub">{T('dashboardSub')}</p>
         </div>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
           {PERIODS.map(p => (
@@ -118,9 +120,9 @@ export default function Dashboard({ navigate }) {
 
       {period === 'custom' && (
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', background: 'var(--bg2)', padding: '12px 16px', borderRadius: 'var(--radius)', border: '1px solid var(--border)' }}>
-          <span style={{ fontSize: 13, color: 'var(--text2)' }}>从</span>
+          <span style={{ fontSize: 13, color: 'var(--text2)' }}>{T('from')}</span>
           <input type="date" min="2000-01-01" max="2099-12-31" value={customStart} onChange={e => setCustomStart(e.target.value)} style={{ width: 150 }} />
-          <span style={{ fontSize: 13, color: 'var(--text2)' }}>到</span>
+          <span style={{ fontSize: 13, color: 'var(--text2)' }}>{T('to')}</span>
           <input type="date" min="2000-01-01" max="2099-12-31" value={customEnd} onChange={e => setCustomEnd(e.target.value)} style={{ width: 150 }} />
         </div>
       )}
@@ -128,32 +130,32 @@ export default function Dashboard({ navigate }) {
       <div className="metrics-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
         <div className="metric-card">
           <div className="metric-label" style={{ color: 'var(--text2)' }}>
-            {period === 'all' ? '历史总 Cash 投入' : '期间 Cash 投入'}
+            {period === 'all' ? T('totalCashIn') : T('periodCashIn')}
           </div>
           <div className="metric-value">${cashIn.toLocaleString()}</div>
         </div>
         <div className="metric-card">
           <div className="metric-label" style={{ color: 'var(--text2)' }}>
-            {period === 'all' ? '当前持仓成本' : '期间 Cash 回收'}
+            {period === 'all' ? T('holdingCost') : T('periodCashOut')}
           </div>
           <div className={`metric-value ${period === 'all' ? (holdingCost < 0 ? 'pos' : '') : 'pos'}`}>
             ${period === 'all' ? holdingCost.toLocaleString() : cashOut.toLocaleString()}
           </div>
         </div>
         <div className="metric-card">
-          <div className="metric-label" style={{ color: 'var(--text2)' }}>已实现盈亏</div>
+          <div className="metric-label" style={{ color: 'var(--text2)' }}>{T('realizedPnl')}</div>
           <div className={`metric-value ${realized >= 0 ? 'pos' : 'neg'}`}>
             {realized >= 0 ? <TrendingUp size={18} /> : <TrendingDown size={18} />}
             {fmt(realized)}
           </div>
         </div>
         <div className="metric-card">
-          <div className="metric-label" style={{ color: 'var(--text2)' }}>当前持仓</div>
-          <div className="metric-value accent"><Layers size={18} /> {holdings} 张</div>
+          <div className="metric-label" style={{ color: 'var(--text2)' }}>{T('currentHoldings')}</div>
+          <div className="metric-value accent"><Layers size={18} /> {holdings}{language === 'zh' ? ' 张' : ''}</div>
         </div>
         <div className="metric-card">
           <div className="metric-label" style={{ color: 'var(--text2)' }}>
-            {period === 'all' ? '净投入 Cash' : '期间净投入 Cash'}
+            {period === 'all' ? T('netCashIn') : T('periodNetCashIn')}
           </div>
           <div className={`metric-value ${cashIn - cashOut >= 0 ? '' : 'pos'}`}>
             {cashIn - cashOut >= 0 ? '-' : '+'}${Math.abs(cashIn - cashOut).toLocaleString()}
@@ -163,7 +165,7 @@ export default function Dashboard({ navigate }) {
 
       {monthly.length > 0 && (
         <div className="section-card">
-          <div className="section-title">月度已实现盈亏（近6个月）</div>
+          <div className="section-title">月度{T('realizedPnl')}（近6个月）</div>
           <div className="bar-chart">
             {monthly.map(([month, val]) => (
               <div key={month} className="bar-col">
@@ -183,20 +185,20 @@ export default function Dashboard({ navigate }) {
       <div className="section-card">
         <div className="section-title-row">
           <div className="section-title">
-            {period === 'all' ? '最近交易' : `${PERIODS.find(p=>p.value===period)?.label || ''}交易记录`}
+            {period === 'all' ? T('recentTxns') : `${PERIODS.find(p=>p.value===period)?.label || ''}交易记录`}
           </div>
-          <button className="link-btn" onClick={() => navigate('history')}>查看全部 →</button>
+          <button className="link-btn" onClick={() => navigate('history')}>{T('viewAll')}</button>
         </div>
         {filteredTxns.length === 0 ? (
-          <div className="empty-state">该时间段内暂无交易记录</div>
+          <div className="empty-state">{T('noTxns')}</div>
         ) : (
           <table className="data-table">
             <thead>
               <tr>
-                <th style={{ color: 'var(--text2)' }}>日期</th>
-                <th style={{ color: 'var(--text2)' }}>卡牌 / 交易内容</th>
-                <th style={{ color: 'var(--text2)' }}>类型</th>
-                <th style={{ color: 'var(--text2)' }}>盈亏 / 状态</th>
+                <th style={{ color: 'var(--text2)' }}>{T('date')}</th>
+                <th style={{ color: 'var(--text2)' }}>{T('cardContent')}</th>
+                <th style={{ color: 'var(--text2)' }}>{T('type')}</th>
+                <th style={{ color: 'var(--text2)' }}>{T('pnlStatus')}</th>
               </tr>
             </thead>
             <tbody>

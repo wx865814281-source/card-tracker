@@ -19,6 +19,7 @@ export default function App() {
   const [page, setPage] = useState('dashboard')
   const [menuOpen, setMenuOpen] = useState(false)
   const [refresh, setRefresh] = useState(0)
+  const [language, setLanguage] = useState('zh')
 
   const navigate = (p) => { setPage(p); setMenuOpen(false) }
   const onSaved = () => { setRefresh(r => r + 1); setPage('history') }
@@ -46,6 +47,12 @@ export default function App() {
           ))}
         </nav>
         <div style={{ flex: 1 }} />
+        <button
+          onClick={() => setLanguage(l => l === 'zh' ? 'en' : 'zh')}
+          style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 14px', color: 'var(--text2)', fontSize: 13, cursor: 'pointer', margin: '0 12px 8px', fontWeight: 600 }}
+        >
+          {language === 'zh' ? 'EN' : '中文'}
+        </button>
         <button className="nav-btn export-btn" onClick={() => alert('导出功能即将上线')}>
           <FileSpreadsheet size={16} />
           <span>导出数据</span>
@@ -65,7 +72,7 @@ export default function App() {
       {menuOpen && <div className="overlay" onClick={() => setMenuOpen(false)} />}
 
       <main className="main-content">
-        <PageComponent key={page === 'dashboard' || page === 'holdings' || page === 'history' ? refresh : undefined} onSaved={onSaved} navigate={navigate} />
+        <PageComponent key={page === 'dashboard' || page === 'holdings' || page === 'history' ? refresh : undefined} onSaved={onSaved} navigate={navigate} language={language} />
       </main>
     </div>
   )
