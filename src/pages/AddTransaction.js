@@ -22,8 +22,12 @@ function CardPicker({ cards, onSelect, placeholder }) {
       {open && (
         <div className="picker-list">
           {filtered.length === 0 ? <div className="picker-empty">没有找到卡牌</div> : filtered.map(c => (
-            <div key={c.id} className="picker-item" onMouseDown={() => { onSelect(c); setOpen(false); setQuery('') }}>
-              <span>{c.name}</span><span className="picker-cost">成本 ${c.actual_cost?.toLocaleString()}</span>
+            <div key={c.id} className="picker-item" onMouseDown={() => { onSelect(c); setOpen(false); setQuery('') }} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 6, background: 'var(--bg4)', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
+                {c.photo_url ? <img src={c.photo_url} alt={c.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '🃏'}
+              </div>
+              <span style={{ flex: 1 }}>{c.name}</span>
+              <span className="picker-cost">成本 ${c.actual_cost?.toLocaleString()}</span>
             </div>
           ))}
         </div>
