@@ -4,7 +4,8 @@ import { Search, X, Plus, Users } from 'lucide-react'
 import { lang } from '../lib/i18n'
 import './pages.css'
 
-function CardPicker({ cards, onSelect, placeholder }) {
+function CardPicker({ cards, onSelect, placeholder, language = 'zh' }) {
+  const T = (key) => lang(key, language)
   const [query, setQuery] = useState('')
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -167,7 +168,7 @@ export default function AddTransaction({ onSaved, navigate, language = 'zh' }) {
 
         {type === 'sell' && (<>
           <div className="form-group"><label>{T('selectSellCard')}</label>
-            {sellCard ? <div className="selected-pill">{sellCard.name} <button onClick={() => setSellCard(null)}><X size={13} /></button></div> : <CardPicker cards={holdingCards} onSelect={setSellCard} placeholder={T('searchHoldings')} />}
+            {sellCard ? <div className="selected-pill">{sellCard.name} <button onClick={() => setSellCard(null)}><X size={13} /></button></div> : <CardPicker cards={holdingCards} onSelect={setSellCard} placeholder={T('searchHoldings')} language={language} />}
           </div>
           {sellCard && (<div className="form-group"><label>{T('sellPrice')}</label><input type="number" placeholder="0.00" value={salePrice} onChange={e => setSalePrice(e.target.value)} /><div className="form-hint">成本 ${sellCard.actual_cost?.toLocaleString()}{sellCard.agreed_value ? `，认可Value $${sellCard.agreed_value?.toLocaleString()}` : ''}</div></div>)}
         </>)}
@@ -182,7 +183,7 @@ export default function AddTransaction({ onSaved, navigate, language = 'zh' }) {
                   <button onClick={() => setTradeOutCards(tradeOutCards.filter(x => x.id !== c.id))}><X size={13} /></button>
                 </div>
               ))}
-              <CardPicker cards={availableForOut} onSelect={c => setTradeOutCards([...tradeOutCards, c])} placeholder={tradeOutCards.length === 0 ? T('selectFromLib') : T('addMoreCard')} />
+              <CardPicker cards={availableForOut} onSelect={c => setTradeOutCards([...tradeOutCards, c])} placeholder={tradeOutCards.length === 0 ? T('selectFromLib') : T('addMoreCard')} language={language} />
               <div className="form-group" style={{ marginTop: 12 }}>
                 <label style={{ fontSize: 12 }}>{T('extraCashOut')}</label>
                 <input type="number" placeholder="0" value={tradeOutCash} onChange={e => setTradeOutCash(e.target.value)} />
