@@ -63,7 +63,16 @@ export default function TransactionHistory({ language = 'zh' }) {
     return true
   }
 
-  const filtered = txns.filter(t => (typeFilter === 'all' ? true : t.type === typeFilter) && inRange(t.date))
+  const filtered = txns.filter(t => {
+    if (!(typeFilter === 'all' ? true : t.type === typeFilter)) return false
+    if (!inRange(t.date)) return false
+    // 过滤掉没有任何卡牌内容的空记录
+    const legs = t.transaction_legs || []
+    const hasCard = legs.some(l => l.card_id || l.card_name_manual)
+    const hasCash = legs.some(l => l.cash_amount && l.cash_amount > 0)
+    if (!hasCard && !hasCash) return false
+    return true
+  })
   const totalRealized = sales.filter(r => inRange(r.sale_date)).reduce((s, r) => s + (r.sale_price - (r.cards?.actual_cost || 0)), 0)
   const fmt = (n) => { if (n == null) return '—'; const abs = Math.abs(n).toLocaleString(); return (n >= 0 ? '+$' : '-$') + abs }
 
