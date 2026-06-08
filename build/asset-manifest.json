@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/static/css/main.edb20742.css",
+    "main.js": "/static/js/main.cea5a403.js",
+    "index.html": "/index.html",
+    "main.edb20742.css.map": "/static/css/main.edb20742.css.map",
+    "main.cea5a403.js.map": "/static/js/main.cea5a403.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.edb20742.css",
+    "static/js/main.cea5a403.js"
+  ]
+}

@@ -18,7 +18,7 @@ function CardPicker({ cards, onSelect, placeholder }) {
     <div className="picker-wrap" ref={ref}>
       <div className="picker-search">
         <Search size={14} />
-        <input placeholder={placeholder || '{T('searchLib')}'} value={query} onChange={e => setQuery(e.target.value)} onFocus={() => setOpen(true)} />
+        <input placeholder={placeholder || T('searchLib')} value={query} onChange={e => setQuery(e.target.value)} onFocus={() => setOpen(true)} />
       </div>
       {open && (
         <div className="picker-list">
@@ -82,7 +82,7 @@ export default function AddTransaction({ onSaved, navigate, language = 'zh' }) {
     setSaving(true); setMsg(null)
     try {
       if (type === 'buy') {
-        if (!buyCardName || !buyAmount) { setMsg('请填写{T('cardName')}和金额'); setSaving(false); return }
+        if (!buyCardName || !buyAmount) { setMsg(T('fillNameAmount')); setSaving(false); return }
         const { data: txn } = await supabase.from('transactions').insert({ type: 'buy', date, notes }).select().single()
         const { data: card } = await supabase.from('cards').insert({ name: buyCardName, source_type: 'cash', actual_cost: parseFloat(buyAmount), status: 'holding' }).select().single()
         let photoUrl = null
@@ -151,7 +151,7 @@ export default function AddTransaction({ onSaved, navigate, language = 'zh' }) {
         </div>
 
         {type === 'buy' && (<>
-          <div className="form-group"><label>{T('cardName')}</label><input placeholder="{T('cardNamePlaceholder')}" value={buyCardName} onChange={e => setBuyCardName(e.target.value)} /></div>
+          <div className="form-group"><label>{T('cardName')}</label><input placeholder={T('cardNamePlaceholder')} value={buyCardName} onChange={e => setBuyCardName(e.target.value)} /></div>
           <div className="form-group"><label>{T('purchaseAmount')}</label><input type="number" placeholder="0.00" value={buyAmount} onChange={e => setBuyAmount(e.target.value)} /></div>
           <div className="form-group"><label>{T('cardPhoto')}</label>
             <label className="photo-upload"
@@ -167,7 +167,7 @@ export default function AddTransaction({ onSaved, navigate, language = 'zh' }) {
 
         {type === 'sell' && (<>
           <div className="form-group"><label>{T('selectSellCard')}</label>
-            {sellCard ? <div className="selected-pill">{sellCard.name} <button onClick={() => setSellCard(null)}><X size={13} /></button></div> : <CardPicker cards={holdingCards} onSelect={setSellCard} placeholder="{T('searchHoldings')}" />}
+            {sellCard ? <div className="selected-pill">{sellCard.name} <button onClick={() => setSellCard(null)}><X size={13} /></button></div> : <CardPicker cards={holdingCards} onSelect={setSellCard} placeholder={T('searchHoldings')} />}
           </div>
           {sellCard && (<div className="form-group"><label>{T('sellPrice')}</label><input type="number" placeholder="0.00" value={salePrice} onChange={e => setSalePrice(e.target.value)} /><div className="form-hint">成本 ${sellCard.actual_cost?.toLocaleString()}{sellCard.agreed_value ? `，认可Value $${sellCard.agreed_value?.toLocaleString()}` : ''}</div></div>)}
         </>)}
@@ -182,7 +182,7 @@ export default function AddTransaction({ onSaved, navigate, language = 'zh' }) {
                   <button onClick={() => setTradeOutCards(tradeOutCards.filter(x => x.id !== c.id))}><X size={13} /></button>
                 </div>
               ))}
-              <CardPicker cards={availableForOut} onSelect={c => setTradeOutCards([...tradeOutCards, c])} placeholder={tradeOutCards.length === 0 ? '{T('selectFromLib')}' : '{T('addMoreCard')}'} />
+              <CardPicker cards={availableForOut} onSelect={c => setTradeOutCards([...tradeOutCards, c])} placeholder={tradeOutCards.length === 0 ? T('selectFromLib') : T('addMoreCard')} />
               <div className="form-group" style={{ marginTop: 12 }}>
                 <label style={{ fontSize: 12 }}>{T('extraCashOut')}</label>
                 <input type="number" placeholder="0" value={tradeOutCash} onChange={e => setTradeOutCash(e.target.value)} />
@@ -206,7 +206,7 @@ export default function AddTransaction({ onSaved, navigate, language = 'zh' }) {
               {tradeInRows.map((row, i) => (
                 <div key={i} className="trade-in-row">
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <input placeholder="{T('cardName')}" value={row.name} onChange={e => { const r=[...tradeInRows]; r[i].name=e.target.value; setTradeInRows(r) }} style={{ flex: 2 }} />
+                    <input placeholder={T('cardName')} value={row.name} onChange={e => { const r=[...tradeInRows]; r[i].name=e.target.value; setTradeInRows(r) }} style={{ flex: 2 }} />
                     {tradeInRows.length > 1 && <button className="icon-btn" onClick={() => setTradeInRows(tradeInRows.filter((_,j) => j!==i))}><X size={13} /></button>}
                   </div>
                   <div style={{ marginTop: 6 }}>
@@ -215,7 +215,7 @@ export default function AddTransaction({ onSaved, navigate, language = 'zh' }) {
                   </div>
                 </div>
               ))}
-              <button className="add-row-btn" onClick={() => setTradeInRows([...tradeInRows, { name: '', agreedValue: '' }])}><Plus size={13} /> 添加更多卡</button>
+              <button className="add-row-btn" onClick={() => setTradeInRows([...tradeInRows, { name: '', agreedValue: '' }])}>{T('addMoreCard')}</button>
               <div className="form-group" style={{ marginTop: 12 }}>
                 <label style={{ fontSize: 12 }}>{T('extraCashIn')}</label>
                 <input type="number" placeholder="0" value={tradeInCash} onChange={e => setTradeInCash(e.target.value)} />
@@ -235,7 +235,7 @@ export default function AddTransaction({ onSaved, navigate, language = 'zh' }) {
           </div>
         )}
 
-        <div className="form-group"><label>{T('notes')}</label><input placeholder="{T('notesPH')}" value={notes} onChange={e => setNotes(e.target.value)} /></div>
+        <div className="form-group"><label>{T('notes')}</label><input placeholder={T('notesPH')} value={notes} onChange={e => setNotes(e.target.value)} /></div>
         {msg === 'success' && <div className="msg-success">✅ 保存成功！跳转中...</div>}
         {msg && msg !== 'success' && <div className="msg-error">⚠️ {msg}</div>}
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>

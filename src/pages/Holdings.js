@@ -213,9 +213,9 @@ function CardDetail({ card, onClose, onDeleted, onUpdated, language = 'zh' }) {
     const start = new Date(buyLeg.transactions.date)
     const end = card.status === 'sold' && saleInfo ? new Date(saleInfo.sale_date) : new Date()
     const days = Math.floor((end - start) / (1000 * 60 * 60 * 24))
-    if (days < 30) return `${days}` ${T('days')}``
-    if (days < 365) return `${Math.floor(days / 30)}` ${T('months')} `${days % 30}` ${T('days')}``
-    return `${Math.floor(days / 365)}` ${T('years')} `${Math.floor((days % 365) / 30)} 个月`
+    if (days < 30) return `${days} ${T('days')}`
+    if (days < 365) return `${Math.floor(days / 30)} ${T('months')} ${days % 30} ${T('days')}`
+    return `${Math.floor(days / 365)} ${T('years')} ${Math.floor((days % 365) / 30)} ${T('months')}`
   }
 
   const handleFileSelect = (e) => {
@@ -368,7 +368,7 @@ function CardDetail({ card, onClose, onDeleted, onUpdated, language = 'zh' }) {
             }
             <div className="photo-hover-overlay">
               <Camera size={22} />
-              <span>{uploading ? '{T('uploading')}' : '{T('changePhoto')}'}</span>
+              <span>{uploading ? T('uploading') : T('changePhoto')}</span>
             </div>
             <input ref={fileRef} type="file" accept="image/*" onChange={handleFileSelect} style={{ display: 'none' }} />
           </div>
@@ -388,7 +388,7 @@ function CardDetail({ card, onClose, onDeleted, onUpdated, language = 'zh' }) {
               </div>
               {card.agreed_value && (
                 <div className="detail-item">
-                  <div className="detail-label">{card.source_type === 'cash' ? '{T('refValue')}' : '{T('agreedValue')}'}</div>
+                  <div className="detail-label">{card.source_type === 'cash' ? T('refValue') : T('agreedValue')}</div>
                   <div className="detail-value purple">${card.agreed_value?.toLocaleString()}</div>
                 </div>
               )}
@@ -564,7 +564,7 @@ export default function Holdings({ navigate, language = 'zh' }) {
                   <div className="cost-item"><DollarSign size={12} /><span className="cost-label">{T('actualCost')}</span><span className="cost-val">${card.actual_cost?.toLocaleString()}</span></div>
                   {card.source_type === 'trade' && card.agreed_value && <div className="cost-item purple"><span className="cost-label">{T('agreedValue')}</span><span className="cost-val">${card.agreed_value?.toLocaleString()}</span></div>}{card.source_type === 'cash' && card.agreed_value && <div className="cost-item purple"><span className="cost-label">{T('refValue')}</span><span className="cost-val">${card.agreed_value?.toLocaleString()}</span></div>}
                 </div>
-                <div className="card-source"><ArrowRight size={11} />{card.source_type === 'cash' ? T('cashBuy') : card.source_card?.name ? `来自 ${card.source_card.name}` : '{T('fromTrade')}'}</div>
+                <div className="card-source"><ArrowRight size={11} />{card.source_type === 'cash' ? T('cashBuy') : card.source_card?.name ? `来自 ${card.source_card.name}` : T('fromTrade')}</div>
               </div>
             </div>
           ))}
@@ -586,7 +586,7 @@ export default function Holdings({ navigate, language = 'zh' }) {
                   </td>
                   <td>${card.actual_cost?.toLocaleString()}</td>
                   <td>{card.agreed_value ? <span className="value-tag">${card.agreed_value?.toLocaleString()}</span> : <span style={{ color: 'var(--text3)' }}>—</span>}</td>
-                  <td style={{ fontSize: 12, color: 'var(--text2)' }}>{card.source_type === 'cash' ? T('cashBuy') : card.source_card?.name ? `来自 ${card.source_card.name}` : '{T('fromTrade')}'}</td>
+                  <td style={{ fontSize: 12, color: 'var(--text2)' }}>{card.source_type === 'cash' ? T('cashBuy') : card.source_card?.name ? `来自 ${card.source_card.name}` : T('fromTrade')}</td>
                   <td><span className={`badge ${card.status === 'holding' ? 'badge-pending' : 'badge-sold'}`}>{card.status === 'holding' ? T('holdingFilter') : T('soldFilter')}</span></td>
                 </tr>
               ))}

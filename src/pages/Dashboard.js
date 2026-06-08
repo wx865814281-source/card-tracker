@@ -5,12 +5,12 @@ import { lang } from '../lib/i18n'
 import './pages.css'
 
 const PERIODS = [
-  { label: {T('thisMonth')}, value: 'this_month' },
-  { label: {T('lastMonth')}, value: 'last_month' },
-  { label: {T('thisYear')}, value: 'this_year' },
-  { label: {T('lastYear')}, value: 'last_year' },
-  { label: {T('all')}, value: 'all' },
-  { label: {T('custom')}, value: 'custom' },
+  { label: '本月', value: 'this_month' },
+  { label: '上月', value: 'last_month' },
+  { label: '今年', value: 'this_year' },
+  { label: '去年', value: 'last_year' },
+  { label: '全部', value: 'all' },
+  { label: '自定义', value: 'custom' },
 ]
 
 function getPeriodRange(period) {
