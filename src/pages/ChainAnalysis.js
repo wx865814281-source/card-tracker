@@ -198,6 +198,74 @@ export default function ChainAnalysis({ language = 'zh' }) {
     setLoading(false)
   }
 
+  // 递归计算整条链的 cash 流
+  const calcChainCash = (cardId, visited = []) => {
+    if (visited.includes(cardId)) return { cashOut: 0, cashIn: 0, complete: true }
+    const newVisited = [...visited, cardId]
+
+    const allLegs = allTxns.flatMap(t => (t.transaction_legs || []).map(l => ({ ...l, txn: t })))
+
+    // 这张卡的买入 leg
+    const inLeg = allLegs.find(l => l.card_id === cardId && l.direction === 'in')
+    // 这张卡的卖出/trade-out leg
+    const outLeg = allLegs.find(l => l.card_id === cardId && l.direction === 'out')
+    const sale = allSales.find(s => s.card_id === cardId)
+
+    let cashOut = 0  // 花出去的
+    let cashIn = 0   // 收回来的
+    let complete = true
+
+    // 买入时花的 cash
+    if (inLeg?.txn?.type === 'buy') {
+      cashOut += inLeg.cash_amount || 0
+    }
+
+    // trade 得到时：同笔交易付出的 cash（你补的）
+    if (inLeg?.txn?.type === 'trade') {
+      const inTxnLegs = inLeg.txn.transaction_legs || []
+      const tradeCashOut = inTxnLegs.filter(l => l.direction === 'out' && !l.card_id).reduce((s, l) => s + (l.cash_amount || 0), 0)
+      const tradeCashIn = inTxnLegs.filter(l => l.direction === 'in' && !l.card_id).reduce((s, l) => s + (l.cash_amount || 0), 0)
+      // 按这张卡的 agreed value 占比分摊 cash
+      const inCards = inTxnLegs.filter(l => l.direction === 'in' && l.card_id)
+      const totalAgreed = inCards.reduce((s, l) => s + (l.agreed_value || 0), 0)
+      const myAgreed = inLeg.agreed_value || 0
+      const share = totalAgreed > 0 ? myAgreed / totalAgreed : 1 / Math.max(inCards.length, 1)
+      cashOut += tradeCashOut * share
+      cashIn += tradeCashIn * share
+    }
+
+    // 最终卖出
+    if (sale) {
+      cashIn += sale.sale_price || 0
+    } else if (outLeg?.txn?.type === 'trade') {
+      // trade 出去：递归计算换来的每张卡
+      const outTxnLegs = outLeg.txn.transaction_legs || []
+      const receivedCards = outTxnLegs.filter(l => l.direction === 'in' && l.card_id)
+      const receivedCash = outTxnLegs.filter(l => l.direction === 'in' && !l.card_id).reduce((s, l) => s + (l.cash_amount || 0), 0)
+      const paidCash = outTxnLegs.filter(l => l.direction === 'out' && !l.card_id).reduce((s, l) => s + (l.cash_amount || 0), 0)
+
+      // trade 时直接收到的 cash
+      cashIn += receivedCash
+      // trade 时额外付出的 cash
+      cashOut += paidCash
+
+      // 递归每张换来的卡
+      for (const l of receivedCards) {
+        if (!newVisited.includes(l.card_id)) {
+          const sub = calcChainCash(l.card_id, newVisited)
+          cashOut += sub.cashOut
+          cashIn += sub.cashIn
+          if (!sub.complete) complete = false
+        }
+      }
+    } else {
+      // 还在持有中，未完结
+      complete = false
+    }
+
+    return { cashOut, cashIn, complete }
+  }
+
   const getCashSummary = () => {
     if (!selected || !allTxns.length) return null
     const allLegs = allTxns.flatMap(t => (t.transaction_legs || []).map(l => ({ ...l, txn: t })))
