@@ -314,26 +314,33 @@ export default function ChainAnalysis({ language = 'zh' }) {
 
       {selected && !loading && (
         <>
-          {summary && (
-            <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-              <div className="metric-card" style={{ flex: 1, minWidth: 140 }}>
-                <div className="metric-label">{T('directCost')}</div>
-                <div className="metric-value">${summary.cashPaid.toLocaleString()}</div>
-              </div>
-              <div className="metric-card" style={{ flex: 1, minWidth: 140 }}>
-                <div className="metric-label">{T('cashRecovered')}</div>
-                <div className={`metric-value ${summary.cashReceived > 0 ? 'pos' : ''}`}>
-                  {summary.cashReceived > 0 ? '$' + summary.cashReceived.toLocaleString() : T('unsoldStatus')}
+          {selected && allTxns.length > 0 && (() => {
+            const chain = calcChainCash(selected.id, [])
+            const net = chain.cashIn - chain.cashOut
+            return (
+              <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
+                <div className="metric-card" style={{ flex: 1, minWidth: 140 }}>
+                  <div className="metric-label">链条总花出</div>
+                  <div className="metric-value">${Math.round(chain.cashOut).toLocaleString()}</div>
+                </div>
+                <div className="metric-card" style={{ flex: 1, minWidth: 140 }}>
+                  <div className="metric-label">链条总收回</div>
+                  <div className={`metric-value ${chain.cashIn > 0 ? 'pos' : ''}`}>
+                    ${Math.round(chain.cashIn).toLocaleString()}
+                  </div>
+                </div>
+                <div className="metric-card" style={{ flex: 1, minWidth: 140 }}>
+                  <div className="metric-label">
+                    链条净盈亏{!chain.complete && <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 4 }}>（未完结）</span>}
+                  </div>
+                  <div className={`metric-value ${net >= 0 ? 'pos' : 'neg'}`}>
+                    {fmt(net)}
+                    {!chain.complete && <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 6 }}>部分未结算</span>}
+                  </div>
                 </div>
               </div>
-              <div className="metric-card" style={{ flex: 1, minWidth: 140 }}>
-                <div className="metric-label">净{T('pnlLabel')}（{T('directCost')}）</div>
-                <div className={`metric-value ${summary.net >= 0 ? 'pos' : 'neg'}`}>
-                  {summary.settled ? fmt(summary.net) : T('unsettled')}
-                </div>
-              </div>
-            </div>
-          )}
+            )
+          })()}
 
           <div className="section-card">
             <div className="section-title">{T('fullChain')}</div>

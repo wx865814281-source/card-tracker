@@ -30,9 +30,17 @@ export default function App() {
   return (
     <div className="app-shell">
       <aside className={`sidebar ${menuOpen ? 'open' : ''}`}>
-        <div className="sidebar-logo">
-          <span className="logo-icon">♦</span>
-          <span>Card Tracker</span>
+        <div className="sidebar-logo" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span className="logo-icon">♦</span>
+            <span>Card Tracker</span>
+          </div>
+          <button
+            onClick={() => setLanguage(l => l === 'zh' ? 'en' : 'zh')}
+            style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 10px', color: 'var(--text2)', fontSize: 12, cursor: 'pointer', fontWeight: 600 }}
+          >
+            {language === 'zh' ? 'EN' : '中文'}
+          </button>
         </div>
         <nav>
           {NAV.map(({ id, label, icon: Icon }) => (
@@ -47,12 +55,6 @@ export default function App() {
           ))}
         </nav>
         <div style={{ flex: 1 }} />
-        <button
-          onClick={() => setLanguage(l => l === 'zh' ? 'en' : 'zh')}
-          style={{ background: 'var(--bg3)', border: '1px solid var(--border)', borderRadius: 8, padding: '6px 14px', color: 'var(--text2)', fontSize: 13, cursor: 'pointer', margin: '0 12px 8px', fontWeight: 600 }}
-        >
-          {language === 'zh' ? 'EN' : '中文'}
-        </button>
         <button className="nav-btn export-btn" onClick={() => alert('导出功能即将上线')}>
           <FileSpreadsheet size={16} />
           <span>导出数据</span>
