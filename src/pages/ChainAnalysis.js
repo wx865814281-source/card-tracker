@@ -220,36 +220,19 @@ export default function ChainAnalysis({ language = 'zh' }) {
       cashOut += inLeg.cash_amount || 0
     }
 
-    // trade 得到时：同笔交易付出的 cash（你补的）
-    if (inLeg?.txn?.type === 'trade') {
-      const inTxnLegs = inLeg.txn.transaction_legs || []
-      const tradeCashOut = inTxnLegs.filter(l => l.direction === 'out' && !l.card_id).reduce((s, l) => s + (l.cash_amount || 0), 0)
-      const tradeCashIn = inTxnLegs.filter(l => l.direction === 'in' && !l.card_id).reduce((s, l) => s + (l.cash_amount || 0), 0)
-      // 按这张卡的 agreed value 占比分摊 cash
-      const inCards = inTxnLegs.filter(l => l.direction === 'in' && l.card_id)
-      const totalAgreed = inCards.reduce((s, l) => s + (l.agreed_value || 0), 0)
-      const myAgreed = inLeg.agreed_value || 0
-      const share = totalAgreed > 0 ? myAgreed / totalAgreed : 1 / Math.max(inCards.length, 1)
-      cashOut += tradeCashOut * share
-      cashIn += tradeCashIn * share
-    }
-
     // 最终卖出
     if (sale) {
       cashIn += sale.sale_price || 0
     } else if (outLeg?.txn?.type === 'trade') {
-      // trade 出去：递归计算换来的每张卡
+      // trade 出去时：算这笔 trade 的 cash 进出，然后递归换来的每张卡
       const outTxnLegs = outLeg.txn.transaction_legs || []
       const receivedCards = outTxnLegs.filter(l => l.direction === 'in' && l.card_id)
       const receivedCash = outTxnLegs.filter(l => l.direction === 'in' && !l.card_id).reduce((s, l) => s + (l.cash_amount || 0), 0)
       const paidCash = outTxnLegs.filter(l => l.direction === 'out' && !l.card_id).reduce((s, l) => s + (l.cash_amount || 0), 0)
 
-      // trade 时直接收到的 cash
       cashIn += receivedCash
-      // trade 时额外付出的 cash
       cashOut += paidCash
 
-      // 递归每张换来的卡
       for (const l of receivedCards) {
         if (!newVisited.includes(l.card_id)) {
           const sub = calcChainCash(l.card_id, newVisited)
@@ -289,7 +272,7 @@ export default function ChainAnalysis({ language = 'zh' }) {
         <div className="picker-search" style={{ background: 'var(--bg2)', border: '1px solid var(--border2)' }}>
           <Search size={15} />
           <input
-            placeholder="{T('searchCard')}"
+            placeholder={T('searchCard')}
             value={query}
             onChange={e => { setQuery(e.target.value); setSelected(null); handleSearch(e.target.value) }}
             style={{ flex: 1 }}

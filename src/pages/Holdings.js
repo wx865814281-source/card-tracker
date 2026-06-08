@@ -541,7 +541,7 @@ export default function Holdings({ navigate, language = 'zh' }) {
 
       <div style={{ position: 'relative', marginBottom: 16 }}>
         <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text3)', pointerEvents: 'none' }} />
-        <input placeholder="{T('searchPlaceholder')}" value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: 36, width: '100%' }} />
+        <input placeholder={T('searchPlaceholder')} value={search} onChange={e => setSearch(e.target.value)} style={{ paddingLeft: 36, width: '100%' }} />
         {search && <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--text3)', cursor: 'pointer', padding: 4 }}><X size={14} /></button>}
       </div>
 
