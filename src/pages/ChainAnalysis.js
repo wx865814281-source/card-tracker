@@ -199,32 +199,28 @@ export default function ChainAnalysis({ language = 'zh' }) {
   }
 
   // 递归计算整条链的 cash 流
-  const calcChainCash = (cardId, visited = []) => {
-    if (visited.includes(cardId)) return { cashOut: 0, cashIn: 0, complete: true }
+  const calcChainCash = (cardId, cardName, visited = []) => {
+    if (visited.includes(cardId)) return { cashOut: 0, cashIn: 0, complete: true, pending: [] }
     const newVisited = [...visited, cardId]
 
     const allLegs = allTxns.flatMap(t => (t.transaction_legs || []).map(l => ({ ...l, txn: t })))
 
-    // 这张卡的买入 leg
     const inLeg = allLegs.find(l => l.card_id === cardId && l.direction === 'in')
-    // 这张卡的卖出/trade-out leg
     const outLeg = allLegs.find(l => l.card_id === cardId && l.direction === 'out')
     const sale = allSales.find(s => s.card_id === cardId)
 
-    let cashOut = 0  // 花出去的
-    let cashIn = 0   // 收回来的
+    let cashOut = 0
+    let cashIn = 0
     let complete = true
+    let pending = []
 
-    // 买入时花的 cash
     if (inLeg?.txn?.type === 'buy') {
       cashOut += inLeg.cash_amount || 0
     }
 
-    // 最终卖出
     if (sale) {
       cashIn += sale.sale_price || 0
     } else if (outLeg?.txn?.type === 'trade') {
-      // trade 出去时：算这笔 trade 的 cash 进出，然后递归换来的每张卡
       const outTxnLegs = outLeg.txn.transaction_legs || []
       const receivedCards = outTxnLegs.filter(l => l.direction === 'in' && l.card_id)
       const receivedCash = outTxnLegs.filter(l => l.direction === 'in' && !l.card_id).reduce((s, l) => s + (l.cash_amount || 0), 0)
@@ -235,18 +231,19 @@ export default function ChainAnalysis({ language = 'zh' }) {
 
       for (const l of receivedCards) {
         if (!newVisited.includes(l.card_id)) {
-          const sub = calcChainCash(l.card_id, newVisited)
+          const sub = calcChainCash(l.card_id, l.cards?.name, newVisited)
           cashOut += sub.cashOut
           cashIn += sub.cashIn
           if (!sub.complete) complete = false
+          pending = pending.concat(sub.pending)
         }
       }
     } else {
-      // 还在持有中，未完结
       complete = false
+      pending = [{ id: cardId, name: cardName || '未知卡牌' }]
     }
 
-    return { cashOut, cashIn, complete }
+    return { cashOut, cashIn, complete, pending }
   }
 
   const getCashSummary = () => {
@@ -298,30 +295,46 @@ export default function ChainAnalysis({ language = 'zh' }) {
       {selected && !loading && (
         <>
           {selected && allTxns.length > 0 && (() => {
-            const chain = calcChainCash(selected.id, [])
+            const chain = calcChainCash(selected.id, selected.name, [])
             const net = chain.cashIn - chain.cashOut
+            const uniquePending = Array.from(new Map(chain.pending.map(p => [p.id, p])).values())
             return (
-              <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-                <div className="metric-card" style={{ flex: 1, minWidth: 140 }}>
-                  <div className="metric-label">链条总花出</div>
-                  <div className="metric-value">${Math.round(chain.cashOut).toLocaleString()}</div>
-                </div>
-                <div className="metric-card" style={{ flex: 1, minWidth: 140 }}>
-                  <div className="metric-label">链条总收回</div>
-                  <div className={`metric-value ${chain.cashIn > 0 ? 'pos' : ''}`}>
-                    ${Math.round(chain.cashIn).toLocaleString()}
+              <>
+                <div style={{ display: 'flex', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
+                  <div className="metric-card" style={{ flex: 1, minWidth: 140 }}>
+                    <div className="metric-label">链条总花出（全链条）</div>
+                    <div className="metric-value">${Math.round(chain.cashOut).toLocaleString()}</div>
+                  </div>
+                  <div className="metric-card" style={{ flex: 1, minWidth: 140 }}>
+                    <div className="metric-label">链条总收回（全链条）</div>
+                    <div className={`metric-value ${chain.cashIn > 0 ? 'pos' : ''}`}>
+                      ${Math.round(chain.cashIn).toLocaleString()}
+                    </div>
+                  </div>
+                  <div className="metric-card" style={{ flex: 1, minWidth: 140 }}>
+                    <div className="metric-label">
+                      链条净盈亏{!chain.complete && <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 4 }}>（未完结）</span>}
+                    </div>
+                    <div className={`metric-value ${net >= 0 ? 'pos' : 'neg'}`}>
+                      {fmt(net)}
+                      {!chain.complete && <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 6 }}>部分未结算</span>}
+                    </div>
                   </div>
                 </div>
-                <div className="metric-card" style={{ flex: 1, minWidth: 140 }}>
-                  <div className="metric-label">
-                    链条净盈亏{!chain.complete && <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 4 }}>（未完结）</span>}
-                  </div>
-                  <div className={`metric-value ${net >= 0 ? 'pos' : 'neg'}`}>
-                    {fmt(net)}
-                    {!chain.complete && <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 6 }}>部分未结算</span>}
-                  </div>
+                <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 20 }}>
+                  以上数字统计的是这张卡完整链条（含所有下游 Trade 和卖出）的总现金流，不只是这张卡本身的成本。
                 </div>
-              </div>
+                {!chain.complete && uniquePending.length > 0 && (
+                  <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '12px 16px', marginBottom: 20 }}>
+                    <div style={{ fontSize: 12, color: 'var(--text2)', marginBottom: 8 }}>以下卡牌仍在持有中，导致链条未完全结算：</div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {uniquePending.map(p => (
+                        <span key={p.id} className="badge" style={{ color: '#facc15', background: 'rgba(250,204,21,0.15)', border: '1px solid rgba(250,204,21,0.3)' }}>{p.name}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
             )
           })()}
 
