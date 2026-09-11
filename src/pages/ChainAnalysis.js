@@ -199,64 +199,62 @@ export default function ChainAnalysis({ language = 'zh' }) {
   }
 
   // 递归计算整条链的 cash 流
-  const calcChainCash = (cardId, cardName, visited = []) => {
-    if (visited.includes(cardId)) return { cashOut: 0, cashIn: 0, complete: true, pending: [] }
-    const newVisited = [...visited, cardId]
-
+  const computeChainTotals = (rootCardId) => {
     const allLegs = allTxns.flatMap(t => (t.transaction_legs || []).map(l => ({ ...l, txn: t })))
 
-    const inLeg = allLegs.find(l => l.card_id === cardId && l.direction === 'in')
-    const outLeg = allLegs.find(l => l.card_id === cardId && l.direction === 'out')
-    const sale = allSales.find(s => s.card_id === cardId)
+    // 第一步：从根卡出发，收集这条链涉及的所有卡和所有交易（不重复）
+    const visitedCards = new Set()
+    const visitedTxnIds = new Set()
+    const queue = [rootCardId]
 
+    while (queue.length) {
+      const cid = queue.shift()
+      if (visitedCards.has(cid)) continue
+      visitedCards.add(cid)
+      const legsForCard = allLegs.filter(l => l.card_id === cid)
+      for (const leg of legsForCard) {
+        if (!visitedTxnIds.has(leg.transaction_id)) {
+          visitedTxnIds.add(leg.transaction_id)
+          const txnLegs = leg.txn.transaction_legs || []
+          for (const tl of txnLegs) {
+            if (tl.card_id && !visitedCards.has(tl.card_id)) queue.push(tl.card_id)
+          }
+        }
+      }
+    }
+
+    // 第二步：对收集到的每笔交易，只结算一次现金流
     let cashOut = 0
     let cashIn = 0
-    let complete = true
-    let pending = []
-
-    if (inLeg?.txn?.type === 'buy') {
-      cashOut += inLeg.cash_amount || 0
+    for (const txnId of visitedTxnIds) {
+      const txn = allTxns.find(t => t.id === txnId)
+      if (!txn) continue
+      const legs = txn.transaction_legs || []
+      if (txn.type === 'buy') {
+        cashOut += legs.filter(l => l.direction === 'in' && l.card_id).reduce((s, l) => s + (l.cash_amount || 0), 0)
+      }
+      if (txn.type === 'trade') {
+        cashOut += legs.filter(l => l.direction === 'out' && !l.card_id).reduce((s, l) => s + (l.cash_amount || 0), 0)
+        cashIn += legs.filter(l => l.direction === 'in' && !l.card_id).reduce((s, l) => s + (l.cash_amount || 0), 0)
+      }
+      if (txn.type === 'sell') {
+        const sale = allSales.find(s => s.transaction_id === txn.id)
+        if (sale) cashIn += sale.sale_price || 0
+      }
     }
 
-    if (sale) {
-      cashIn += sale.sale_price || 0
-    } else if (outLeg?.txn?.type === 'trade') {
-      const outTxnLegs = outLeg.txn.transaction_legs || []
-      // 这笔交易里，除了当前这张卡，还有没有其他卡也被一起交易出去（搭卖）
-      const otherOutCards = outTxnLegs.filter(l => l.direction === 'out' && l.card_id && l.card_id !== cardId)
-      const receivedCards = outTxnLegs.filter(l => l.direction === 'in' && l.card_id)
-      const receivedCash = outTxnLegs.filter(l => l.direction === 'in' && !l.card_id).reduce((s, l) => s + (l.cash_amount || 0), 0)
-      const paidCash = outTxnLegs.filter(l => l.direction === 'out' && !l.card_id).reduce((s, l) => s + (l.cash_amount || 0), 0)
-
-      cashIn += receivedCash
-      cashOut += paidCash
-
-      // 把搭卖的其他卡的成本也算进这条链的总花出（按各自成本递归上溯来源）
-      for (const l of otherOutCards) {
-        if (!newVisited.includes(l.card_id)) {
-          const sub = calcChainCash(l.card_id, l.cards?.name, newVisited)
-          cashOut += sub.cashOut
-          cashIn += sub.cashIn
-          if (!sub.complete) complete = false
-          pending = pending.concat(sub.pending)
-        }
+    // 第三步：找出链条里仍持有中的卡（没有卖出记录，也没有后续 trade out）
+    const pending = []
+    for (const cid of visitedCards) {
+      const hasSale = allSales.some(s => s.card_id === cid)
+      const hasOutTrade = allLegs.some(l => l.card_id === cid && l.direction === 'out' && l.txn.type === 'trade')
+      if (!hasSale && !hasOutTrade) {
+        const anyLeg = allLegs.find(l => l.card_id === cid)
+        pending.push({ id: cid, name: anyLeg?.cards?.name || '未知卡牌' })
       }
-
-      for (const l of receivedCards) {
-        if (!newVisited.includes(l.card_id)) {
-          const sub = calcChainCash(l.card_id, l.cards?.name, newVisited)
-          cashOut += sub.cashOut
-          cashIn += sub.cashIn
-          if (!sub.complete) complete = false
-          pending = pending.concat(sub.pending)
-        }
-      }
-    } else {
-      complete = false
-      pending = [{ id: cardId, name: cardName || '未知卡牌' }]
     }
 
-    return { cashOut, cashIn, complete, pending }
+    return { cashOut, cashIn, complete: pending.length === 0, pending }
   }
 
   const getCashSummary = () => {
@@ -308,7 +306,7 @@ export default function ChainAnalysis({ language = 'zh' }) {
       {selected && !loading && (
         <>
           {selected && allTxns.length > 0 && (() => {
-            const chain = calcChainCash(selected.id, selected.name, [])
+            const chain = computeChainTotals(selected.id)
             const net = chain.cashIn - chain.cashOut
             const uniquePending = Array.from(new Map(chain.pending.map(p => [p.id, p])).values())
             const myCost = selected.actual_cost || 0
