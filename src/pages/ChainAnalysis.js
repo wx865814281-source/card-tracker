@@ -222,12 +222,25 @@ export default function ChainAnalysis({ language = 'zh' }) {
       cashIn += sale.sale_price || 0
     } else if (outLeg?.txn?.type === 'trade') {
       const outTxnLegs = outLeg.txn.transaction_legs || []
+      // 这笔交易里，除了当前这张卡，还有没有其他卡也被一起交易出去（搭卖）
+      const otherOutCards = outTxnLegs.filter(l => l.direction === 'out' && l.card_id && l.card_id !== cardId)
       const receivedCards = outTxnLegs.filter(l => l.direction === 'in' && l.card_id)
       const receivedCash = outTxnLegs.filter(l => l.direction === 'in' && !l.card_id).reduce((s, l) => s + (l.cash_amount || 0), 0)
       const paidCash = outTxnLegs.filter(l => l.direction === 'out' && !l.card_id).reduce((s, l) => s + (l.cash_amount || 0), 0)
 
       cashIn += receivedCash
       cashOut += paidCash
+
+      // 把搭卖的其他卡的成本也算进这条链的总花出（按各自成本递归上溯来源）
+      for (const l of otherOutCards) {
+        if (!newVisited.includes(l.card_id)) {
+          const sub = calcChainCash(l.card_id, l.cards?.name, newVisited)
+          cashOut += sub.cashOut
+          cashIn += sub.cashIn
+          if (!sub.complete) complete = false
+          pending = pending.concat(sub.pending)
+        }
+      }
 
       for (const l of receivedCards) {
         if (!newVisited.includes(l.card_id)) {
@@ -298,9 +311,16 @@ export default function ChainAnalysis({ language = 'zh' }) {
             const chain = calcChainCash(selected.id, selected.name, [])
             const net = chain.cashIn - chain.cashOut
             const uniquePending = Array.from(new Map(chain.pending.map(p => [p.id, p])).values())
+            const myCost = selected.actual_cost || 0
+            const myShare = chain.cashOut !== 0 ? myCost / chain.cashOut : 0
+            const myAllocatedPnl = net * myShare
             return (
               <>
                 <div style={{ display: 'flex', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
+                  <div className="metric-card" style={{ flex: 1, minWidth: 140 }}>
+                    <div className="metric-label">这张卡单独花出</div>
+                    <div className="metric-value">${Math.round(myCost).toLocaleString()}</div>
+                  </div>
                   <div className="metric-card" style={{ flex: 1, minWidth: 140 }}>
                     <div className="metric-label">链条总花出（全链条）</div>
                     <div className="metric-value">${Math.round(chain.cashOut).toLocaleString()}</div>
@@ -311,6 +331,8 @@ export default function ChainAnalysis({ language = 'zh' }) {
                       ${Math.round(chain.cashIn).toLocaleString()}
                     </div>
                   </div>
+                </div>
+                <div style={{ display: 'flex', gap: 12, marginBottom: 8, flexWrap: 'wrap' }}>
                   <div className="metric-card" style={{ flex: 1, minWidth: 140 }}>
                     <div className="metric-label">
                       链条净盈亏{!chain.complete && <span style={{ fontSize: 10, color: 'var(--text3)', marginLeft: 4 }}>（未完结）</span>}
@@ -320,9 +342,16 @@ export default function ChainAnalysis({ language = 'zh' }) {
                       {!chain.complete && <span style={{ fontSize: 11, color: 'var(--text3)', marginLeft: 6 }}>部分未结算</span>}
                     </div>
                   </div>
+                  <div className="metric-card" style={{ flex: 1, minWidth: 140 }}>
+                    <div className="metric-label">这张卡按比例分摊净盈亏</div>
+                    <div className={`metric-value ${myAllocatedPnl >= 0 ? 'pos' : 'neg'}`}>
+                      {fmt(myAllocatedPnl)}
+                    </div>
+                  </div>
                 </div>
-                <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 20 }}>
-                  以上数字统计的是这张卡完整链条（含所有下游 Trade 和卖出）的总现金流，不只是这张卡本身的成本。
+                <div style={{ fontSize: 11, color: 'var(--text3)', marginBottom: 20, lineHeight: 1.6 }}>
+                  链条总花出/总收回统计的是整条链条（含所有搭卖的卡和下游 Trade、卖出）的总现金流。
+                  "这张卡按比例分摊净盈亏"是按这张卡的成本占链条总花出的比例，估算它应分得多少净盈亏，仅供参考，不代表精确核算。
                 </div>
                 {!chain.complete && uniquePending.length > 0 && (
                   <div style={{ background: 'var(--bg2)', border: '1px solid var(--border)', borderRadius: 'var(--radius)', padding: '12px 16px', marginBottom: 20 }}>
